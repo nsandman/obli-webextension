@@ -30,7 +30,8 @@ document.addEventListener("DOMContentLoaded", function() {
                     "event": "rmscript",
                     "script": whichScript 
                 }, () => {
-                    table.deleteRow(whichScript+1);
+                    //table.deleteRow(whichScript+1);
+                    document.location.reload();
                 });                
             });
         });

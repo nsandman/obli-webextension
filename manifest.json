@@ -6,13 +6,12 @@
 		{
 			"all_frames": true, 
 			"js": ["src/webinterface.js"],
-			"matches": ["http://*/*", "https://*/*"]
+			"matches": ["<all_urls>"],
+            "run_at": "document_start"
 		}
 	],
 	"permissions": [
 		"tabs",
-		"http://*/*",
-		"https://*/*",
 		"unlimitedStorage",
         "storage"
 	],
