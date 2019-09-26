@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", function() {
         console.log("name: " + sname);
 
         let options = {};
-        options[sname] = script;
+        options["_script_" + sname] = script;
         chrome.runtime.sendMessage({
             "event": "savescript",
             "options": options

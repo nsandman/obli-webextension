@@ -1,4 +1,10 @@
 document.addEventListener("DOMContentLoaded", function() {
+    const dispatcherInput = document.getElementById("dispatcher");
+    chrome.runtime.sendMessage({"event": "getproperty", "data": "dispatcher"}, (res) => {
+        if (res)
+            dispatcherInput.value = res;
+    });
+
     chrome.runtime.sendMessage({"event": "getscripts"}, (scripts) => {
         let objectIterable = Object.entries(scripts);
 
@@ -11,9 +17,19 @@ document.addEventListener("DOMContentLoaded", function() {
 
             const iText = i.toString();
 
-            cell1.innerHTML = "<a class='gm' href='#' data-num='"+iText+"'>" + objectIterable[i][0] + "</a>";
+            cell1.innerHTML = "<a class='gm' href='#' data-num='" + iText + "'>" + objectIterable[i][0] + "</a>";
             cell2.innerHTML = "<a class='rm' href='#' data-num='" + iText + "'>X</a>";
         }
+
+        document.getElementById("savesettings").addEventListener("click", function() {
+            const dispatcherUrl = dispatcherInput.value;
+            const settings = {
+                "dispatcher": dispatcherUrl
+            };
+            chrome.runtime.sendMessage({"event": "saveproperties", "options": settings}, () => {
+                window.location.reload();
+            });            
+        });
 
         const els = document.getElementsByClassName("gm");
         Array.prototype.forEach.call(els, function(el) {

@@ -50,7 +50,34 @@ document.addEventListener("DOMContentLoaded", function() {
                             this.setTextValue(el, "");
                         }
                     };
-                    const Messenger = {};
+                    const Messenger = {
+                        // send(string method, object data, (optional)function callback)
+                        send: function(method, data, cb) {
+                            payload = {
+                                "event": "msgsend",
+                                "data": {
+                                    "module": TPI.myName,
+                                    "name": method,
+                                    "data": data
+                                }
+                            };
+                            if (cb)
+                                return chrome.runtime.sendMessage(payload, cb);
+                            else
+                                return chrome.runtime.sendMessage(payload);
+                        },
+
+                        // listen(string method, function cb)
+                        listen: function(method, cb) {
+                            chrome.runtime.sendMessage({
+                                "event": "msglisten",
+                                "data": {
+                                    "method": method,
+                                    "cb": cb
+                                }
+                            });
+                        }
+                    };
                     const DataStore = {
                         // saveKey(string key, obj val, function next())
                         saveKey: function(key, val, next) {
@@ -73,17 +100,31 @@ document.addEventListener("DOMContentLoaded", function() {
                         }
                     };
 
-                    // TODO: Create getters and setters with Messenger
+                    // same API as DataStore
                     const SharedDataStore = {
+                        __doGetSet: function(key) {
+                            Messenger.listen("get_" + key, (data, cb) => {
+                                DataStore.getKeys(key, (r) => {
+                                    cb(r);
+                                });
+                            });
+                            Messenger.listen("set_" + key, (data) => {
+                                DataStore.saveKey(key, data["value"]);
+                            });
+                        },
+
                         saveKey: function(key, val, next) {
+                            this.__doGetSet(key);
                             DataStore.saveKey(key, val, next);
                         },
+
                         saveKeys: function(options, next) {
+                            for (key of Object.keys(options)) {
+                                this.__doGetSet(key);
+                            }
                             DataStore.saveKeys(options, next);
                         },
-                        getKeys: function(keys, next) {
-                            DataStore.getKeys(keys, next);
-                        }
+                        getKeys: DataStore.getKeys
                     };
 
 					(function() {
