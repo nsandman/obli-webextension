@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             return chrome.storage.local.set(options, next);
                         },
 
-                        // getKey(string/string[] keys, function(results))
+                        // getKeys(string/string[] keys, function(results))
                         getKeys: function(keys, next) {
                             return chrome.storage.local.get(keys, next);
                         }
