@@ -1,5 +1,15 @@
+let naEnabled = false;
+
 chrome.storage.local.get("dispatcher", (item) => {
-    let dispatchSocket = io(item["dispatcher"]);
+    const dispatchSocket = io(item["dispatcher"]);
+    const naSocket       = io("http://localhost:5726");
+    naSocket.on("connect", () => {
+        naEnabled = true;
+    });
+
+    dispatchSocket.on("open_url", (data) => {
+        chrome.tabs.create(data);
+    });
 
     chrome.runtime.onMessage.addListener((req, sender, response) => {
         switch (req.event) {
@@ -7,6 +17,16 @@ chrome.storage.local.get("dispatcher", (item) => {
             case "savescript":
                 chrome.storage.local.set(req.options);
                 break;
+
+            case "checkna":
+                response(naEnabled);
+                break;
+            case "naServerEvent":
+                const data = req["data"];
+                if (naEnabled)
+                    naSocket.emit(data["name"], data["data"], (res) => {
+                        response(res);
+                    });
 
             case "getscripts":
                 // get all local storage with null

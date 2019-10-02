@@ -5,7 +5,10 @@
 	"content_scripts": [
 		{
 			"all_frames": true, 
-			"js": ["src/webinterface.js"],
+            "js": [
+                "inc/jquery-offset.js",
+                "src/webinterface.js"
+            ],
 			"matches": ["<all_urls>"],
             "run_at": "document_start"
 		}
@@ -16,7 +19,7 @@
         "storage"
 	],
     "background": {
-        "scripts": ["src/background.js"],
+        "scripts": ["inc/socket.io.js", "src/background.js"],
         "persistent": true
     },
     "options_page": "src/web/options.html"

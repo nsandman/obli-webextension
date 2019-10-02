@@ -17,8 +17,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
             const iText = i.toString();
 
-            cell1.innerHTML = "<a class='gm' href='#' data-num='" + iText + "'>" + objectIterable[i][0] + "</a>";
-            cell2.innerHTML = "<a class='rm' href='#' data-num='" + iText + "'>X</a>";
+            cell1.innerHTML = objectIterable[i][0];
+            cell2.innerHTML = `<center>
+               <a href="addscript.html?r=` + iText + `" target="_blank"><i class="fas fa-pencil-alt"></i></a> 
+            &nbsp;
+            <a href='#'><i class="fas fa-wrench"></i></a>
+            &nbsp;
+            <a class='rm' href='#' data-num='` + iText + `'><i class='fas fa-minus-circle'></i></a>
+            </center>`;
         }
 
         document.getElementById("savesettings").addEventListener("click", function() {

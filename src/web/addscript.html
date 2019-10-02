@@ -10,24 +10,46 @@
             color: #00adb5; 
         }
 
-        textarea, input {
+        input, button {
             background-color: #3a4750;
             border: 0;
             color: #eee;
         }
 
-        textarea {
-            border-radius: 10px;
+        .js-console{
+            width: 30rem;
+            height: 20rem;
+        }
+        #editor {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+        }
+        footer{
+            background: #000;
+            position: absolute;
+            width: 100%;
+            bottom: 0;
+            left: 0;
+            z-index: 10;
         }
     </style>
-    <script src="scriptmechanics.js"></script>
+    <script src="addscript.js"></script>
     <title>obli - Add Script</title>
 </head>
 <body>
-    <input id="scriptname" size="50" placeholder="Script Name" />
-    <input type="button" id="button" value="Upload New Script" />
-    <br /><br />
-
-    <textarea id="scripttext" style="width: 80%; height: 30em"></textarea>
+    <!--<textarea id="scripttext" style="width: 80%; height: 30em"></textarea>-->
+    <div class="js-console">
+        <div id="editor"></div>
+        <footer>
+            <input id="scriptname" size="50" placeholder="Script Name" />
+            <button id="run">Test</button>
+            <input type="button" style="float: right" id="button" value="Upload" />
+        </footer>
+    </div>
+    <script type="text/javascript" src="vendor/ace.js"></script>
+    <script type="text/javascript" src="main.js"></script>        
 </body>
 </html>
