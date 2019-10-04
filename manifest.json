@@ -16,8 +16,10 @@
 	"permissions": [
 		"tabs",
 		"unlimitedStorage",
-        "storage"
+        "storage",
+        "<all_urls>"
 	],
+    "browser_action": {},
     "background": {
         "scripts": ["inc/socket.io.js", "src/background.js"],
         "persistent": true

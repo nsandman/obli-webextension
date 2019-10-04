@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", function() {
             cell2.innerHTML = `<center>
                <a href="addscript.html?r=` + iText + `" target="_blank"><i class="fas fa-pencil-alt"></i></a> 
             &nbsp;
-            <a href='#'><i class="fas fa-wrench"></i></a>
+            <a href="#" class="gm" data-num="`+iText+`"><i class="fas fa-wrench"></i></a>
             &nbsp;
             <a class='rm' href='#' data-num='` + iText + `'><i class='fas fa-minus-circle'></i></a>
             </center>`;
@@ -61,5 +61,5 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 function popup(number) {
-    window.open("viewcode.html?r="+number.toString(), "_blank", "toolbar=no,scrollbars=yes,resizable=yes,width=400,height=400");
+    window.open("script_options.html?r="+number.toString(), "_blank", "toolbar=no,scrollbars=yes,resizable=yes,width=400,height=400");
 }

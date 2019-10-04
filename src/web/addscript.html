@@ -35,13 +35,71 @@
             left: 0;
             z-index: 10;
         }
+
+        /* The Modal (background) */
+        .modal {
+          display: none; /* Hidden by default */
+          position: fixed; /* Stay in place */
+          z-index: 1; /* Sit on top */
+          padding-top: 100px; /* Location of the box */
+          left: 0;
+          top: 0;
+          width: 100%; /* Full width */
+          height: 100%; /* Full height */
+          overflow: auto; /* Enable scroll if needed */
+          background-color: rgb(0,0,0); /* Fallback color */
+          background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        /* Modal Content */
+        .modal-content {
+          background-color: #fefefe;
+          margin: auto;
+          padding: 20px;
+          border: 1px solid #888;
+          width: 80%;
+          color: black;
+        }
+
+        /* The Close Button */
+        .close {
+          color: #aaaaaa;
+          float: right;
+          font-size: 28px;
+          font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+          color: #000;
+          text-decoration: none;
+          cursor: pointer;
+        }
     </style>
+    <link href="../../inc/dndod-popup.min.css" rel="stylesheet" type="text/css">
+    <script src="../../inc/dnod-popup.min.js"></script>
     <script src="addscript.js"></script>
     <title>obli - Add Script</title>
 </head>
 <body>
     <!--<textarea id="scripttext" style="width: 80%; height: 30em"></textarea>-->
     <div class="js-console">
+        <div id="myModal" class="modal">
+
+          <!-- Modal content -->
+          <div class="modal-content">
+            <span class="close">&times;</span>
+            <h1>Choose Quicktest Page</h1>
+            <table id="pages" style="color: black">
+                <col style="margin-right: 20px;" />
+                <!--<tr>-->
+                    <!--<td><strong>&#96;</strong></td>-->
+                    <!--<td>Blank Page</td>-->
+                <!--</tr>-->
+            </table>
+          </div>
+
+        </div>
         <div id="editor"></div>
         <footer>
             <input id="scriptname" size="50" placeholder="Script Name" />

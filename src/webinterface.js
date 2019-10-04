@@ -56,10 +56,10 @@ document.addEventListener("DOMContentLoaded", function() {
                     };
 
                     // alternative Action API
+                    let NaturalAction = null;
                     chrome.runtime.sendMessage("checkna", (naEnabled) => {
-                        let list = [list, list]
                         if (naEnabled)
-                            const NaturalAction = {
+                            NaturalAction = {
                                 __sendMessage: function(method, data, cb) {
                                     const payload = {
                                         "event": "naServerEvent",
@@ -190,9 +190,20 @@ document.addEventListener("DOMContentLoaded", function() {
                         getKeys: DataStore.getKeys
                     };
 
-					(function() {
-						eval(injections[i][1]);
-					})();
+                    const code = injections[i][1];
+                    chrome.runtime.sendMessage({
+                        "event": "getopts",
+                        "script": injections[i][0]
+                    }, (prefs) => {
+                        const url = window.location.href;
+                        const re  = new RegExp(prefs["domains"], "g");
+
+                        if (prefs["enabled"] && url.match(re)) {
+                            (function() {
+                                eval(code);
+                            })();
+                        }
+                    });
 				})(); 
 			} catch(e) {
 				console.log('obli found an error in script "' + injections[i][0] + '": ' + "" + e);

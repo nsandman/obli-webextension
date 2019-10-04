@@ -1,0 +1,36 @@
+<html>
+<head>
+    <title>obli - Options</title>
+    <style>
+        input, textarea {
+            width: 100%;
+        }
+
+        td.first {
+            width: 1px;
+            padding-right: 6px;
+            white-space: nowrap;
+        }
+    </style>
+    <script src="script_options.js"></script>
+</head>
+<body>
+    <h1 id="name"></h1>
+    <table style="width: 100%">
+        <tr>
+            <td class="first">Script Domains (<a href="https://regex101.com/">regex</a>)</td>
+            <td><input id="domains" /></td>
+        </tr>
+        <tr>
+            <td class="first">Test URLs (split with |)</td>
+            <td><textarea id="testpages"></textarea></td>
+        </tr>
+        <tr>
+            <td class="first">Enabled</td>
+            <td><input id="enabled" type="checkbox" /></td>
+        </tr>
+    </table>
+    <br />
+    <button id="save">Save</button>
+</body>
+</html>
