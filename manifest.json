@@ -19,6 +19,14 @@
         "storage",
         "<all_urls>"
 	],
+    "commands": {
+        "show_dialog": {
+            "suggested_key": {
+                "default": "Alt+1"
+            },
+            "description": "Execute an obli script for debugging"
+        }
+    },
     "browser_action": {},
     "background": {
         "scripts": ["inc/socket.io.js", "src/background.js"],

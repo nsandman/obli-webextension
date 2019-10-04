@@ -5,7 +5,6 @@
 
     function init() {
         createEditor();
-        events();
 
         let span = document.getElementsByClassName("close")[0];
 
@@ -34,7 +33,7 @@
                         let cell1 = row.insertCell(1);
 
                         document.addEventListener("keydown", (e) => {
-                            if (modal.style.display != "none") {
+                            if (modal.style.display != "none" && modal.style.display) {
                                 if (e.key == keyOrder[i])
                                     chrome.runtime.sendMessage({
                                         "event": "testpage",
@@ -45,7 +44,7 @@
                                             "width": window.screen.width - window.outerWidth
                                         }
                                     }, () => {
-                                        modal.style.display = "none";
+                                        span.click();
                                     });
                                 else if (e.key == "Escape")
                                     span.click();
@@ -61,11 +60,16 @@
                 scriptname.value = currObj[0];
                 editor.setValue(currObj[1]);
 
-                document.getElementById("run").addEventListener("click", function() {
+                let showTesting = () => {
                     modal.style.display = "block";
-                    span.addEventListener("click", () => { 
+                    span.addEventListener("click", () => {
                         modal.style.display = "none";
                     });
+                }
+                document.getElementById("run").addEventListener("click", showTesting);
+                chrome.commands.onCommand.addListener(function(command) {
+                    if (command == "show_dialog")
+                        showTesting();
                 });
             });
         }
@@ -102,18 +106,6 @@
             editor.getSession().setMode("ace/mode/javascript");
             editor.setKeyboardHandler("ace/keyboard/vim");
         }
-    }
-
-    function events() {
-        document.getElementById("run").onclick = runCode;
-    }
-
-    function runCode() {
-        var sanitizedValue = editor.getValue().replace(/\n/g, '').replace(/'/g, '\"');
-        var code = "var script = document.createElement('script');script.textContent = '" + sanitizedValue + "';document.body.appendChild(script);";
-        chrome.tabs.executeScript({
-            code: code
-        });
     }
 })();
 

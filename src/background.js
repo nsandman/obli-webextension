@@ -108,8 +108,9 @@ chrome.storage.local.get("dispatcher", (item) => {
                     managedWindows.push(win.id);
                     for (tab of win.tabs)
                         chrome.tabs.update(tab.id, {});
+                    response();
                 }); 
-                break;
+                return true;
 
             case "setopts":
                 let opts = {};
