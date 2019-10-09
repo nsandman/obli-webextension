@@ -135,7 +135,7 @@ var JavaScriptHighlightRules = function() {
             "decodeURI|decodeURIComponent|encodeURI|encodeURIComponent|eval|isFinite|" + // Non-constructor functions
             "isNaN|parseFloat|parseInt|"                                               +
             "JSON|Math|"                                                               + // Other
-            "this|arguments|prototype|window|document"                                 , // Pseudo
+            "this|arguments|prototype|window|document|NaturalAction|Action|SharedDataStore|DataStore|Messenger|TPI"                                 , // Pseudo
         "keyword":
             "const|yield|import|get|set|" +
             "break|case|catch|continue|default|delete|do|else|finally|for|function|" +

@@ -60,36 +60,53 @@ document.addEventListener("DOMContentLoaded", function() {
                     chrome.runtime.sendMessage("checkna", (naEnabled) => {
                         if (naEnabled)
                             NaturalAction = {
-                                __sendMessage: function(method, data, cb) {
+                                __randomInRange: function(min, max) {
+                                  return Math.random() < 0.5 ? ((1-Math.random()) * (max-min) + min) : (Math.random() * (max-min) + min);
+                                },
+
+                                __sendMessage: function(method, data, cb, includeTimeout=true) {
                                     const payload = {
                                         "event": "naServerEvent",
                                         "data": {
-                                            "name": method,
-                                            "data": data
+                                            "name": method
                                         }
                                     };
-                                    if (cb)
-                                        return chrome.runtime.sendMessage(payload, () => {
-                                            setTimeout(next, 800);
-                                        });
-                                    else
-                                        return chrome.runtime.sendMessage(payload);
+                                    if (data)
+                                        payload["data"]["data"] = data;
+
+                                    if (cb) 
+                                        chrome.runtime.sendMessage(payload, () => {
+                                            const pauseTime = includeTimeout ? (Math.floor(Math.random() * 1500) + 1) : 0;
+                                            console.log(pauseTime);
+                                            setTimeout(cb, pauseTime);
+                                        }); 
+                                    else 
+                                        chrome.runtime.sendMessage(payload);
                                 },
 
                                 __domToScreenPos: function(el) {
-                                    const offset = el.offset();
+                                    const jEl = $(el);
+
+                                    const offset     = jEl.offset();
 
                                     //const scrollX = window.pageXOffset || (document.documentElement || document.body.parentNode || document.body).scrollLeft;
                                     //const scrollY = window.pageYOffset || (document.documentElement || document.body.parentNode || document.body).scrollTop;
 
-                                    return {
-                                        x: offset.left + window.screenX,
-                                        y: offset.top + window.screenY
-                                    }
+                                    const compStyle = window.getComputedStyle(el, null);
+                                    const gapX = parseFloat(compStyle.getPropertyValue("padding-left")) + parseFloat(compStyle.getPropertyValue("margin-left"));
+                                    const gapY = parseFloat(compStyle.getPropertyValue("padding-right")) + parseFloat(compStyle.getPropertyValue("margin-right"));
+
+                                    // y-coord: we assume the browser chrome is entirely the toolbar at the top. in other words this probably will break if you have the downloads window up
+                                    return JSON.stringify({
+                                        x: parseInt((offset.left + window.screenX) + this.__randomInRange(gapX, gapX+jEl.width())),
+                                        y: parseInt(((offset.top + window.screenY) + (window.outerHeight - window.innerHeight)) + this.__randomInRange(gapY, gapY+jEl.height()))
+                                    });
                                 },
 
                                 click: function(el, next) {
-                                    this.__sendMessage("click", __domToScreenPos(el), next);
+                                    this.__sendMessage("moveMouse", this.__domToScreenPos(el), () => {
+                                        this.__sendMessage("pressMouse", null, next);
+                                    }, false);
                                 },
 
                                 setTextValue: function(el, val, next) {

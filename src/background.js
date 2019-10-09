@@ -52,7 +52,7 @@ chrome.storage.local.get("dispatcher", (item) => {
                     naSocket.emit(data["name"], data["data"], (res) => {
                         response(res);
                     });
-                break;
+                return true;
 
             case "getscripts":
                 // get all local storage with null

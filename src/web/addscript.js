@@ -3,6 +3,21 @@
 
     document.addEventListener("DOMContentLoaded", init); 
 
+    function saveEditorContent() {
+        let script = editor.getValue();
+        let sname  = scriptname.value;
+
+        let options = {};
+        options["_script_" + sname] = script;
+
+        chrome.runtime.sendMessage({
+            "event": "savescript",
+            "options": options
+        }, (res) => {
+            console.log("Script saved");
+        });
+    }
+
     function init() {
         createEditor();
 
@@ -74,20 +89,7 @@
             });
         }
 
-        document.getElementById("button").addEventListener("click", function() {
-            let script = editor.getValue();
-            let sname  = scriptname.value;
-
-            let options = {};
-            options["_script_" + sname] = script;
-            chrome.runtime.sendMessage({
-                "event": "savescript",
-                "options": options
-            }, (res) => {
-                console.log("Script saved");
-            });
-        });
-
+        document.getElementById("button").addEventListener("click", saveEditorContent); 
     }
 
     // https://html-online.com/articles/get-url-parameters-javascript/
@@ -105,6 +107,22 @@
             editor.setTheme("ace/theme/monokai");
             editor.getSession().setMode("ace/mode/javascript");
             editor.setKeyboardHandler("ace/keyboard/vim");
+            ace.config.loadModule("ace/keyboard/vim", function(module) {
+                const vim = module.CodeMirror.Vim;
+                vim.defineEx("write", "w", function(cm, input) {
+                    cm.ace.execCommand("saveFile");
+                });
+            });
+
+            editor.commands.addCommand({
+                name: "saveFile",
+                bindKey: {
+                    win: "Ctrl-S",
+                    mac: "Command-S",
+                    sender: "editor|cli"
+                },
+                exec: saveEditorContent
+            });
         }
     }
 })();

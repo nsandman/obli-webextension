@@ -6,7 +6,7 @@
 		{
 			"all_frames": true, 
             "js": [
-                "inc/jquery-offset.js",
+                "inc/jquery-offset.min.js",
                 "src/webinterface.js"
             ],
 			"matches": ["<all_urls>"],
