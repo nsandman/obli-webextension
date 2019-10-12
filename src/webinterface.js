@@ -1,230 +1,276 @@
 document.addEventListener("DOMContentLoaded", function() {
-	//------------ Get & process injections -------------------------
+    function __setNative(element, attribute, value) {
+        const { set: valueSetter } = Object.getOwnPropertyDescriptor(element, attribute) || {};
+        const prototype = Object.getPrototypeOf(element);
+        const { set: prototypeValueSetter } = Object.getOwnPropertyDescriptor(prototype, attribute) || {};
+
+        if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
+            prototypeValueSetter.call(element, value)
+        } else if (valueSetter) {
+            valueSetter.call(element, value)
+        } else {
+            throw new Error("The given element does not have a value setter")
+        }
+
+        element.dispatchEvent(new Event("input", { bubbles: true }));
+        element.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+
+    const Action = {
+        // click(DOMElement el)
+        click: function(el, next) {
+            el.click();
+            next();
+        },
+
+        // setTextValue(DOMElement el, string val)
+        setTextValue: function(el, val, next) {
+           __setNative(el, "value", val); 
+            next();
+        },
+
+        // setCheckValue(DOMElement el, bool val)
+        setCheckValue: function(el, val, next) {
+            __setNative(el, "checked", val);
+            next();
+        },
+
+        // clear(DOMElement el)
+        clear: function(el, next) {
+            this.setTextValue(el, "");
+            next();
+        },
+
+        uploadFile: function(el, path, next) {
+            const obliId = "o" + Date.now();
+            el.setAttribute("obli-id", obliId);
+
+            chrome.runtime.sendMessage({
+                "event": "naServerEvent",
+                "data": {
+                    "method": "core",
+                    "name": "uploadFile",
+                    "data": {
+                        "path": path,
+                        "obli-id": obliId
+                    }
+                }
+            }, next);
+        }
+    };
+
+    // alternative Action API
+    let NaturalAction = null;
+    chrome.runtime.sendMessage("checkna", (naEnabled) => {
+        if (naEnabled)
+            NaturalAction = {
+                __randomInRange: function(min, max) {
+                  return Math.random() < 0.5 ? ((1-Math.random()) * (max-min) + min) : (Math.random() * (max-min) + min);
+                },
+
+                __sendMessage: function(method, data, cb, includeTimeout=true) {
+                    const payload = {
+                        "event": "naServerEvent",
+                        "data": {
+                            "method": "na",
+                            "name": method
+                        }
+                    };
+                    if (data)
+                        payload["data"]["data"] = data;
+
+                    if (cb) 
+                        chrome.runtime.sendMessage(payload, () => {
+                            const pauseTime = includeTimeout ? (Math.floor(Math.random() * 1500) + 1) : 0;
+                            setTimeout(cb, pauseTime);
+                        }); 
+                    else 
+                        chrome.runtime.sendMessage(payload);
+                },
+
+                __domToScreenPos: function(el) {
+                    const jEl = $(el);
+
+                    const offset     = jEl.offset();
+
+                    //const scrollX = window.pageXOffset || (document.documentElement || document.body.parentNode || document.body).scrollLeft;
+                    //const scrollY = window.pageYOffset || (document.documentElement || document.body.parentNode || document.body).scrollTop;
+
+                    const compStyle = window.getComputedStyle(el, null);
+                    const gapX = parseFloat(compStyle.getPropertyValue("padding-left")) + parseFloat(compStyle.getPropertyValue("margin-left"));
+                    const gapY = parseFloat(compStyle.getPropertyValue("padding-right")) + parseFloat(compStyle.getPropertyValue("margin-right"));
+
+                    // y-coord: we assume the browser chrome is entirely the toolbar at the top. in other words this probably will break if you have the downloads window up
+                    return JSON.stringify({
+                        x: parseInt((offset.left + window.screenX) + this.__randomInRange(gapX, gapX+jEl.width())),
+                        y: parseInt(((offset.top + window.screenY) + (window.outerHeight - window.innerHeight)) + this.__randomInRange(gapY, gapY+jEl.height()))
+                    });
+                },
+
+                click: function(el, next) {
+                    this.__sendMessage("moveMouse", this.__domToScreenPos(el), () => {
+                        this.__sendMessage("pressMouse", null, next);
+                    }, false);
+                },
+
+                setTextValue: function(el, val, next) {
+                    this.click(el, () => {
+                        this.__sendMessage("type", val, next);
+                    });
+                },
+
+                setCheckValue: function(el, val, next) {
+                    if (el.checked != val)
+                        return this.click(el, next);
+                    return next();
+                },
+
+                clear: function(el, next) {
+                    this.click(el, () => {
+                        this.__sendMessage("clear", null, next);
+                    });
+                },
+
+                uploadFile: Action.uploadFile
+            };
+    });
+
+    const DataStore = {
+        // saveKey(string key, obj val, function next())
+        saveKey: function(key, val, next) {
+            options = {};
+            options[key] = val;
+            return this.saveKeys(options, next);
+        },
+
+        // saveKeys(obj options, function next())
+        saveKeys: function(options, next) {
+            if (!next)
+                return chrome.storage.local.set(options);
+
+            return chrome.storage.local.set(options, next);
+        },
+
+        // getKeys(string/string[] keys, function(results))
+        getKeys: function(keys, next) {
+            return chrome.storage.local.get(keys, next);
+        }
+    };
+
+    //------------ Get & process injections -------------------------
     chrome.runtime.sendMessage({event: "getscripts"}, (scripts) => {
-		// perform script injections
+        // perform script injections
         let injections = Object.entries(scripts);
 
-		for (var i = 0; i < injections.length; i++) {
-			try {
-				(function(){
-                    function __setNative(element, attribute, value) {
-                        const { set: valueSetter } = Object.getOwnPropertyDescriptor(element, attribute) || {};
-                        const prototype = Object.getPrototypeOf(element);
-                        const { set: prototypeValueSetter } = Object.getOwnPropertyDescriptor(prototype, attribute) || {};
+        for (var i = 0; i < injections.length; i++) {
+            (function(){
+                const TPI = {
+                    myName: injections[i][0]
+                };
 
-                        if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
-                            prototypeValueSetter.call(element, value)
-                        } else if (valueSetter) {
-                            valueSetter.call(element, value)
-                        } else {
-                            throw new Error("The given element does not have a value setter")
-                        }
-
-                        element.dispatchEvent(new Event("input", { bubbles: true }));
-                        element.dispatchEvent(new Event("change", { bubbles: true }));
-                    }
-
-                    // API goes here
-                    const TPI = {
-                        myName: injections[i][0]
-                    };
-
-                    const Action = {
-                        // click(DOMElement el)
-                        click: function(el, next) {
-                            el.click();
-                            next();
-                        },
-
-                        // setTextValue(DOMElement el, string val)
-                        setTextValue: function(el, val, next) {
-                           __setNative(el, "value", val); 
-                            next();
-                        },
-
-                        // setCheckValue(DOMElement el, bool val)
-                        setCheckValue: function(el, val, next) {
-                            __setNative(el, "checked", val);
-                            next();
-                        },
-
-                        // clear(DOMElement el)
-                        clear: function(el, next) {
-                            this.setTextValue(el, "");
-                            next();
-                        }
-                    };
-
-                    // alternative Action API
-                    let NaturalAction = null;
-                    chrome.runtime.sendMessage("checkna", (naEnabled) => {
-                        if (naEnabled)
-                            NaturalAction = {
-                                __randomInRange: function(min, max) {
-                                  return Math.random() < 0.5 ? ((1-Math.random()) * (max-min) + min) : (Math.random() * (max-min) + min);
-                                },
-
-                                __sendMessage: function(method, data, cb, includeTimeout=true) {
-                                    const payload = {
-                                        "event": "naServerEvent",
-                                        "data": {
-                                            "name": method
-                                        }
-                                    };
-                                    if (data)
-                                        payload["data"]["data"] = data;
-
-                                    if (cb) 
-                                        chrome.runtime.sendMessage(payload, () => {
-                                            const pauseTime = includeTimeout ? (Math.floor(Math.random() * 1500) + 1) : 0;
-                                            console.log(pauseTime);
-                                            setTimeout(cb, pauseTime);
-                                        }); 
-                                    else 
-                                        chrome.runtime.sendMessage(payload);
-                                },
-
-                                __domToScreenPos: function(el) {
-                                    const jEl = $(el);
-
-                                    const offset     = jEl.offset();
-
-                                    //const scrollX = window.pageXOffset || (document.documentElement || document.body.parentNode || document.body).scrollLeft;
-                                    //const scrollY = window.pageYOffset || (document.documentElement || document.body.parentNode || document.body).scrollTop;
-
-                                    const compStyle = window.getComputedStyle(el, null);
-                                    const gapX = parseFloat(compStyle.getPropertyValue("padding-left")) + parseFloat(compStyle.getPropertyValue("margin-left"));
-                                    const gapY = parseFloat(compStyle.getPropertyValue("padding-right")) + parseFloat(compStyle.getPropertyValue("margin-right"));
-
-                                    // y-coord: we assume the browser chrome is entirely the toolbar at the top. in other words this probably will break if you have the downloads window up
-                                    return JSON.stringify({
-                                        x: parseInt((offset.left + window.screenX) + this.__randomInRange(gapX, gapX+jEl.width())),
-                                        y: parseInt(((offset.top + window.screenY) + (window.outerHeight - window.innerHeight)) + this.__randomInRange(gapY, gapY+jEl.height()))
-                                    });
-                                },
-
-                                click: function(el, next) {
-                                    this.__sendMessage("moveMouse", this.__domToScreenPos(el), () => {
-                                        this.__sendMessage("pressMouse", null, next);
-                                    }, false);
-                                },
-
-                                setTextValue: function(el, val, next) {
-                                    this.click(el, () => {
-                                        this.__sendMessage("type", val, next);
-                                    });
-                                },
-
-                                setCheckValue: function(el, val, next) {
-                                    if (el.checked != val)
-                                        return this.click(el, next);
-                                    return next();
-                                },
-
-                                clear: function(el, next) {
-                                    this.click(el, () => {
-                                        this.__sendMessage("clear", null, next);
-                                    });
-                                }
-                            };
-                    });
-
-
-                    const Messenger = {
-                        // send(string method, object data, (optional)function callback)
-                        send: function(method, data, cb) {
-                            const payload = {
-                                "event": "msgsend",
-                                "data": {
-                                    "module": TPI.myName,
-                                    "name": method,
-                                    "data": data
-                                }
-                            };
-                            if (cb)
-                                return chrome.runtime.sendMessage(payload, cb);
-                            else
-                                return chrome.runtime.sendMessage(payload);
-                        },
-
-                        // listen(string method, function cb)
-                        listen: function(method, cb) {
-                            chrome.runtime.sendMessage({
-                                "event": "msglisten",
-                                "data": {
-                                    "method": method,
-                                    "cb": cb
-                                }
+                // same API as DataStore
+                const SharedDataStore = {
+                    __doGetSet: function(key) {
+                        Messenger.listen("get_" + key, (data, cb) => {
+                            DataStore.getKeys(key, (r) => {
+                                cb(r);
                             });
-                        }
-                    };
-                    const DataStore = {
-                        // saveKey(string key, obj val, function next())
-                        saveKey: function(key, val, next) {
-                            options = {};
-                            options[key] = val;
-                            return this.saveKeys(options, next);
-                        },
+                        });
+                        Messenger.listen("set_" + key, (data) => {
+                            DataStore.saveKey(key, data["value"]);
+                        });
+                    },
 
-                        // saveKeys(obj options, function next())
-                        saveKeys: function(options, next) {
-                            if (!next)
-                                return chrome.storage.local.set(options);
+                    saveKey: function(key, val, next) {
+                        this.__doGetSet(key);
+                        DataStore.saveKey(key, val, next);
+                    },
 
-                            return chrome.storage.local.set(options, next);
-                        },
-
-                        // getKeys(string/string[] keys, function(results))
-                        getKeys: function(keys, next) {
-                            return chrome.storage.local.get(keys, next);
-                        }
-                    };
-
-                    // same API as DataStore
-                    const SharedDataStore = {
-                        __doGetSet: function(key) {
-                            Messenger.listen("get_" + key, (data, cb) => {
-                                DataStore.getKeys(key, (r) => {
-                                    cb(r);
-                                });
-                            });
-                            Messenger.listen("set_" + key, (data) => {
-                                DataStore.saveKey(key, data["value"]);
-                            });
-                        },
-
-                        saveKey: function(key, val, next) {
+                    saveKeys: function(options, next) {
+                        for (key of Object.keys(options)) {
                             this.__doGetSet(key);
-                            DataStore.saveKey(key, val, next);
-                        },
-
-                        saveKeys: function(options, next) {
-                            for (key of Object.keys(options)) {
-                                this.__doGetSet(key);
-                            }
-                            DataStore.saveKeys(options, next);
-                        },
-                        getKeys: DataStore.getKeys
-                    };
-
-                    const code = injections[i][1];
-                    chrome.runtime.sendMessage({
-                        "event": "getopts",
-                        "script": injections[i][0]
-                    }, (prefs) => {
-                        const url = window.location.href;
-                        const re  = new RegExp(prefs["domains"], "g");
-
-                        if (prefs["enabled"] && url.match(re)) {
-                            (function() {
-                                eval(code);
-                            })();
                         }
-                    });
-				})(); 
-			} catch(e) {
-				console.log('obli found an error in script "' + injections[i][0] + '": ' + "" + e);
-			}
-		}
-	});
+                        DataStore.saveKeys(options, next);
+                    },
+                    getKeys: DataStore.getKeys
+                };
+
+                const Messenger = {
+                    // send(string method, object data, (optional)function callback)
+                    send: function(method, data, cb) {
+                        const payload = {
+                            "event": "msgsend",
+                            "data": {
+                                "module": TPI.myName,
+                                "name": method,
+                                "data": data
+                            }
+                        };
+                        if (cb)
+                            return chrome.runtime.sendMessage(payload, cb);
+                        else
+                            return chrome.runtime.sendMessage(payload);
+                    },
+
+                    // listen(string method, function cb)
+                    listen: function(method, cb) {
+                        chrome.runtime.sendMessage({
+                            "event": "msglisten",
+                            "data": {
+                                "method": method,
+                                "cb": cb
+                            }
+                        });
+                    }
+                };
+
+                chrome.runtime.sendMessage({
+                    event: "ismanagedwindow"
+                }, (isTesting) => {
+                    if (isTesting) {
+                        console.baseprint = (type, tolog) => {
+                            chrome.runtime.sendMessage({
+                                "event": "testconsole",
+                                "data": {
+                                    script: TPI.myName,
+                                    messageType: type,
+                                    message: tolog
+                                }
+                            });
+                        };
+                        console.log = (tolog) => console.baseprint(0, tolog);
+                        console.info = (tolog) => console.baseprint(1, tolog);
+                        console.error = (tolog) => console.baseprint(2, tolog);
+                        console.warn = (tolog) => console.baseprint(3, tolog);
+
+                        window.addEventListener("error", e => {
+                            if (e.type == "error")
+                                console.error(`ERROR: '${TPI.myName}'@${e.lineno}:${e.colno}: ${e.message}`);
+                            else if (e.type == "warning")
+                                console.warn(`WARNING: '${TPI.myName}'@${e.lineno}:${e.colno}: ${e.message}`);
+                        });        
+                    }
+                });
+
+                const code = injections[i][1];
+                chrome.runtime.sendMessage({
+                    "event": "getopts",
+                    "script": injections[i][0]
+                }, (prefs) => {
+                    const url = window.location.href;
+                    const re  = new RegExp(prefs["domains"], "g");
+
+                    if (prefs["enabled"] && url.match(re)) {
+                        try {
+                            eval('"use strict";\n' + code);
+                        } catch(e) {
+                            console.error('obli found an error in script "' + injections[i][0] + '": ' + "" + e);
+                        }
+                    }
+                });
+            })(); 
+        }
+        return true;
+    });
 });

@@ -18,75 +18,126 @@
         });
     }
 
+    function initPageWithScriptName(name, script=null) {
+        let span = document.getElementsByClassName("close")[0];
+        let modal = document.getElementById("myModal");
+
+        const keyOrder = "`1234567890qwertyuiop[]asdfghjkl;zxcvbnm,.";
+        const testPages = document.getElementById("pages");
+        chrome.runtime.sendMessage({
+            "event": "getopts",
+            "script": name 
+        }, (options) => {
+            tests = options["testpages"].split("|");
+            tests.unshift("about:blank");
+
+            for (let i = 0; i < tests.length; i++) {
+                let row = testPages.insertRow(i);
+
+                let cell0 = row.insertCell(0);
+                let cell1 = row.insertCell(1);
+
+                document.addEventListener("keydown", (e) => {
+                    if (modal.style.display != "none" && modal.style.display) {
+                        if (e.key == keyOrder[i])
+                            chrome.runtime.sendMessage({
+                                "event": "testpage",
+                                "data": {
+                                    "script": parseInt(getUrlVars()["r"]),
+                                    "url": tests[i],
+                                    "x": window.outerWidth,
+                                    "width": window.screen.width - window.outerWidth
+                                }
+                            }, () => {
+                                span.click();
+                            });
+                        else if (e.key == "Escape")
+                            span.click();
+                    }
+                });
+
+                cell0.innerHTML = "<strong>" + keyOrder[i] + "</strong>";
+                cell1.innerHTML = tests[i];
+            }
+        });
+
+        document.title = "obli - " + name;
+        scriptname.value = name;
+        document.getElementById("namehere").innerHTML = name;
+
+        if (script) {
+            editor.insert(script);
+            editor.gotoLine(0);
+        }
+
+        let showTesting = () => {
+            modal.style.display = "block";
+            span.addEventListener("click", () => {
+                modal.style.display = "none";
+            });
+        }
+        document.getElementById("run").addEventListener("click", showTesting);
+        chrome.commands.onCommand.addListener(function(command) {
+            if (command == "show_dialog")
+                showTesting();
+        });
+        chrome.runtime.onMessage.addListener((req, sender, response) => {
+            switch (req.event) {
+                case "testconsole":
+                    if (req.data.script == name) {
+                        let htmlData = "";
+                        
+                        // TODO make this not disgusting
+                        htmlData = "<pre style='margin:0;color: "; 
+                        switch (req.data.messageType) {
+                            case 1:         // status
+                                htmlData += "#4684ED";
+                                break;
+                            case 2:         // error
+                                htmlData += "#D54133";
+                                break;
+                            case 3:         // warning
+                                htmlData += "#D59B0A";
+                                break;
+                            default:
+                                htmlData += "inherit";
+                                break;
+                        }
+                        htmlData += "'>";
+                        //testConsole.innerHTML = htmlData;
+
+                        htmlData += req.data.message;
+
+                        if (req.data.messageType) {
+                            htmlData += "</pre>";
+                        }
+                        testConsole.innerHTML += htmlData;
+                        testConsole.scrollTop = testConsole.scrollHeight;   // scroll to bottom
+                    }
+                    break;
+            }        
+        });
+    }
+
+    let testConsole;
     function init() {
         createEditor();
 
-        let span = document.getElementsByClassName("close")[0];
-
-        let modal = document.getElementById("myModal");
+        testConsole = document.getElementById("conscroll");
         let scriptname = document.getElementById("scriptname");
 
         if ("r" in getUrlVars()) {
+            const name = getUrlVars()["r"];
+
             chrome.runtime.sendMessage({
                 "event": "getscripts"
             }, (res) => {
                 let currObj = Object.entries(res)[parseInt(getUrlVars()["r"])];
-
-                const keyOrder = "`1234567890qwertyuiop[]asdfghjkl;zxcvbnm,.";
-                const testPages = document.getElementById("pages");
-                chrome.runtime.sendMessage({
-                    "event": "getopts",
-                    "script": currObj[0]
-                }, (options) => {
-                    tests = options["testpages"].split("|");
-                    tests.unshift("about:blank");
-
-                    for (let i = 0; i < tests.length; i++) {
-                        let row = testPages.insertRow(i);
-
-                        let cell0 = row.insertCell(0);
-                        let cell1 = row.insertCell(1);
-
-                        document.addEventListener("keydown", (e) => {
-                            if (modal.style.display != "none" && modal.style.display) {
-                                if (e.key == keyOrder[i])
-                                    chrome.runtime.sendMessage({
-                                        "event": "testpage",
-                                        "data": {
-                                            "script": parseInt(getUrlVars()["r"]),
-                                            "url": tests[i],
-                                            "x": window.outerWidth,
-                                            "width": window.screen.width - window.outerWidth
-                                        }
-                                    }, () => {
-                                        span.click();
-                                    });
-                                else if (e.key == "Escape")
-                                    span.click();
-                            }
-                        });
-
-                        cell0.innerHTML = "<strong>" + keyOrder[i] + "</strong>";
-                        cell1.innerHTML = tests[i];
-                    }
-                });
-
-                document.title = "obli - " + currObj[0];
-                scriptname.value = currObj[0];
-                editor.setValue(currObj[1]);
-
-                let showTesting = () => {
-                    modal.style.display = "block";
-                    span.addEventListener("click", () => {
-                        modal.style.display = "none";
-                    });
-                }
-                document.getElementById("run").addEventListener("click", showTesting);
-                chrome.commands.onCommand.addListener(function(command) {
-                    if (command == "show_dialog")
-                        showTesting();
-                });
+                initPageWithScriptName.apply(this, currObj);
             });
+        }
+        else if ("name" in getUrlVars()) {
+            initPageWithScriptName(getUrlVars()["name"]);
         }
 
         document.getElementById("button").addEventListener("click", saveEditorContent); 
@@ -125,5 +176,6 @@
             });
         }
     }
+
 })();
 

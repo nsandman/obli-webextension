@@ -38,6 +38,12 @@ chrome.storage.local.get("dispatcher", (item) => {
 
     chrome.runtime.onMessage.addListener((req, sender, response) => {
         switch (req.event) {
+            case "ismanagedwindow":
+                chrome.windows.getCurrent((win) => {
+                    response(managedWindows.includes(win.id));
+                });
+                return true;
+
             case "saveproperties":
             case "savescript":
                 chrome.storage.local.set(req.options);
@@ -47,11 +53,11 @@ chrome.storage.local.get("dispatcher", (item) => {
                 response(naEnabled);
                 break;
             case "naServerEvent":
-                const data = req["data"];
-                if (naEnabled)
-                    naSocket.emit(data["name"], data["data"], (res) => {
-                        response(res);
-                    });
+                naSocket.emit("event", req.data, response); 
+                //if (naEnabled)
+                    //naSocket.emit(data["name"], data["data"], (res) => {
+                        //response(res);
+                    //});
                 return true;
 
             case "getscripts":
@@ -81,7 +87,8 @@ chrome.storage.local.get("dispatcher", (item) => {
                         const defaults = {
                             "enabled": true,
                             "domains": "",
-                            "testpages": ""
+                            "testpages": "",
+                            "project": ""
                         };        
 
                         let opts = {};
@@ -136,8 +143,8 @@ chrome.storage.local.get("dispatcher", (item) => {
 
             case "getproperty":
                 chrome.storage.local.get(req.data, (item) => {
-                    response(item[req.data]);
-                });
+        response(item[req.data]);
+            });
                 return true;
 
             case "msgsend":
@@ -150,6 +157,9 @@ chrome.storage.local.get("dispatcher", (item) => {
                 dispatchSocket.on(request.data.event, request.data.cb);
                 break;
             
+            case "testconsole":
+                break;
+
             default:
                 response("ERR: Unknown request");
                 break;

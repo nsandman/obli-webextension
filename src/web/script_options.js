@@ -19,7 +19,8 @@ document.addEventListener("DOMContentLoaded", () => {
             opts = {
                 "domains": document.getElementById("domains").value,
                 "testpages": document.getElementById("testpages").value,
-                "enabled": document.getElementById("enabled").checked
+                "enabled": document.getElementById("enabled").checked,
+                "project": document.getElementById("project").value
             };
 
             chrome.runtime.sendMessage({
@@ -33,7 +34,6 @@ document.addEventListener("DOMContentLoaded", () => {
             "event": "getopts",
             "script": currObj[0]
         }, (options) => {
-            console.log("hello there")
             const iterableOptions = Object.entries(options);
             for (opt of iterableOptions) {
                 console.log(opt[0])

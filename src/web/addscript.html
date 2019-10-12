@@ -2,8 +2,11 @@
 <head>
     <style>
         body {
-            background-color: #303841;
+            background-color:#1E1E1E;
             color: #f0ece2;
+            margin: 0;
+            width: 100%;
+            overflow: hidden;
         }
 
         a {
@@ -11,29 +14,57 @@
         }
 
         input, button {
-            background-color: #3a4750;
+            background-color: #272822;
             border: 0;
             color: #eee;
         }
 
         .js-console{
-            width: 30rem;
-            height: 20rem;
+            margin: none;
+            width: 100%;
+            height: 100%;
         }
+    
         #editor {
-            position: absolute;
+            width: 100%;
+            height: calc(100% - 190px);
             top: 0;
             right: 0;
             bottom: 0;
             left: 0;
         }
-        footer{
-            background: #000;
-            position: absolute;
+        header, div#console {
+            background: #1E1E1E;
             width: 100%;
             bottom: 0;
             left: 0;
             z-index: 10;
+        }
+
+        div#console {
+            height: 190px;
+            background-color:#272822;
+            border-top: 1px solid #555651;
+            font-family: monospace;
+            font-size: 9pt;
+        }
+
+        div#console header {
+            border-bottom: 1px solid #555651;
+            text-align: center;
+            padding-top: 3px;
+            padding-bottom: 3px;
+        }
+
+        div#console #conscroll {
+            width: 100%;
+            height: 80%;
+            resize: none;
+            font-family: inherit;
+            background-color: inherit;
+            border: none;
+            outline: none;
+            overflow-y: scroll;
         }
 
         /* The Modal (background) */
@@ -80,30 +111,36 @@
     <title>obli - Add Script</title>
 </head>
 <body>
-    <!--<textarea id="scripttext" style="width: 80%; height: 30em"></textarea>-->
     <div class="js-console">
+        <header style="margin-top: 7px;margin-bottom:5px;">
+            <input id="scriptname" size="50" placeholder="Script Name" />
+            <button id="run">Test</button>
+            <input type="button" style="float: right" id="button" value="Save" />
+        </header>
         <div id="myModal" class="modal">
 
           <!-- Modal content -->
           <div class="modal-content">
-            <span class="close">&times;</span>
-            <h1>Choose Quicktest Page</h1>
-            <table id="pages" style="color: black">
-                <col style="margin-right: 20px;" />
-                <!--<tr>-->
-                    <!--<td><strong>&#96;</strong></td>-->
-                    <!--<td>Blank Page</td>-->
-                <!--</tr>-->
-            </table>
+              <span class="close">&times;</span>
+              <h1>Choose Quicktest Page</h1>
+              <table id="pages" style="color: black">
+                  <col style="margin-right: 20px;" />
+              </table>
           </div>
 
         </div>
         <div id="editor"></div>
-        <footer>
-            <input id="scriptname" size="50" placeholder="Script Name" />
-            <button id="run">Test</button>
-            <input type="button" style="float: right" id="button" value="Save" />
-        </footer>
+        <div id="console" style="">
+            <header>
+                <span style="position: absolute; left: 0; padding-left: 10px;">
+                    obli v0.0.1
+                </span>
+                <center>
+                    <span id="namehere"></span>
+                </center>
+            </header>
+            <div id="conscroll" />
+        </div>
     </div>
     <script type="text/javascript" src="vendor/ace.js"></script>
     <script type="text/javascript" src="main.js"></script>        

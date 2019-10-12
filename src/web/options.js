@@ -37,6 +37,12 @@ document.addEventListener("DOMContentLoaded", function() {
             });            
         });
 
+        document.getElementById("createnew").addEventListener("click", function() {
+            const name = prompt("Please enter your new script name: ");
+            if (name)
+                window.open("addscript.html?name=" + name, "_blank");
+        });
+
         const els = document.getElementsByClassName("gm");
         Array.prototype.forEach.call(els, function(el) {
             el.addEventListener("click", () => {
