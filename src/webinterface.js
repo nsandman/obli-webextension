@@ -166,7 +166,8 @@ document.addEventListener("DOMContentLoaded", function() {
         for (var i = 0; i < injections.length; i++) {
             (function(){
                 const TPI = {
-                    myName: injections[i][0]
+                    myName: injections[i][0],
+                    isTesting: false
                 };
 
                 // same API as DataStore
@@ -228,6 +229,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 chrome.runtime.sendMessage({
                     event: "ismanagedwindow"
                 }, (isTesting) => {
+                    TPI.isTesting = isTesting;
                     if (isTesting) {
                         console.baseprint = (type, tolog) => {
                             chrome.runtime.sendMessage({
@@ -267,6 +269,8 @@ document.addEventListener("DOMContentLoaded", function() {
                         } catch(e) {
                             console.error('obli found an error in script "' + injections[i][0] + '": ' + "" + e);
                         }
+                        if (TPI.isTesting)
+                            console.info("<strong> --- INFO: Loaded script '" + TPI.myName + "' at " + new Date().toLocaleTimeString() + " --- </strong>");
                     }
                 });
             })(); 
