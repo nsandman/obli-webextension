@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const cell2 = row.insertCell(1);
 
             cell1.innerHTML = `<input id='${script[0]}' type='checkbox'></input>`;
-            cell2.innerHTML = `<span class="${script[0]}">${script[0]}</span>`;
+            cell2.innerHTML = `<label for="${script[0]}" class="${script[0]}">${script[0]}</span>`;
         }
 
         chrome.runtime.sendMessage({

@@ -150,6 +150,44 @@ document.addEventListener("DOMContentLoaded", function() {
                     });
                 });        
             });
+
+            const uploadLink = document.getElementById("uploadproj");
+            uploadLink.addEventListener("change", () => {
+                if (uploadLink.files[0].name.endsWith(".obli")) {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        chrome.runtime.sendMessage({
+                            event: "createproj_file",
+                            data: {
+                                name: uploadLink.files[0].name.slice(0, -5),
+                                zip: reader.result
+                            }
+                        }, () => {
+                            window.location.reload();
+                        });
+                    };
+                    reader.readAsBinaryString(uploadLink.files[0]);
+                } 
+                else if (uploadLink.files[0].name.endsWith(".js")) {
+                    const name = uploadLink.files[0].name
+                        .replace(".obli.js", "")
+                        .replace(".js", "");
+
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        let opts = {};
+                        opts["_script_" + name] = reader.result;
+
+                        chrome.runtime.sendMessage({
+                            event: "saveproject",
+                            options: opts
+                        }, () => {
+                            window.location.reload();
+                        });
+                    };
+                    reader.readAsText(uploadLink.files[0]);
+                }
+            });
         });
     }); 
 });

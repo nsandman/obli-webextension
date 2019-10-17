@@ -50,6 +50,35 @@ chrome.storage.local.get("dispatcher", (item) => {
                 chrome.storage.local.set(req.options);
                 break;
 
+            case "createproj_file":
+                JSZip.loadAsync(req.data.zip)
+                    .then((zip) => {
+                        let projNames = [];
+                        zip.forEach((relativePath, file) => {
+                            const name = relativePath.replace(".obli.js", "");
+
+                            if (!name.includes("/") && (relativePath.includes(".obli.js") && !relativePath.includes(".obli.json"))) {
+                                projNames.push(name);
+
+                                zip.file(name + ".obli.json").async("string").then((options) => {
+                                    file.async("string").then((data) => {
+                                        let opts = {};
+                                        opts["_script_" + name] = data;
+                                        opts["_meta___" + name] = JSON.parse(options);
+
+                                        chrome.storage.local.set(opts);
+                                    });
+                                });
+                            }
+                        });
+
+                        let fspOpts = {};
+                        fspOpts["_proj___" + req.data.name] = projNames;
+
+                        chrome.storage.local.set(fspOpts, () => response("ok"));
+                    });
+                return true;
+
             case "checkna":
                 response(naEnabled);
                 break;
@@ -66,7 +95,8 @@ chrome.storage.local.get("dispatcher", (item) => {
                 chrome.storage.local.get(null, (items) => {
                     let scripts = {};
                     const aItems = Array.from(Object.entries(items));
-                    
+                    console.dir(aItems);
+
                     for (item of aItems) {
                         if (item[0].substring(0, 8) == "_script_") 
                             scripts[item[0].substring(8)] = items[item[0]];
@@ -150,12 +180,29 @@ chrome.storage.local.get("dispatcher", (item) => {
                 chrome.storage.local.get(null, (items) => {
                     let objectIterable = Object.entries(items);
                     for (let i = objectIterable.length; i--;) {
-                        if (objectIterable[i][0].substring(0, 8) != "_script_") {
-                            objectIterable.splice(i, 1);
+                        const prefix = objectIterable[i][0].substring(0, 8);
+                        const rsName = objectIterable[req.script][0].substring(8);
+
+                        if (
+                            prefix == "_proj___" && 
+                            objectIterable[i][1].includes(rsName)
+                        ) {
+                            objectIterable[i][1].splice(objectIterable[i][1].indexOf(rsName), 1);
+
+                            let fixProjOpts = {};
+                            fixProjOpts[objectIterable[i][0]] = objectIterable[i][1];
+
+                            chrome.storage.local.set(fixProjOpts);
                         }
+
+                        if (prefix != "_script_")
+                            objectIterable.splice(i, 1);
                     }
 
-                    chrome.storage.local.remove(objectIterable[req.script][0], () => {
+                    chrome.storage.local.remove([
+                        objectIterable[req.script][0], 
+                        objectIterable[req.script][0].replace("_script_", "_meta___")
+                    ], () => {
                         response("ok");
                     });
                 });
@@ -168,15 +215,25 @@ chrome.storage.local.get("dispatcher", (item) => {
                 return true;
 
             case "dlproject":
-                let zip = new JSZip();
-                chrome.storage.local.get(req.data, (scripts) => {
-                    const ourScripts = scripts[req.data].map(x => "_script_" + x);
-                    chrome.storage.local.get(ourScripts, (codes) => {
-                        const codesIterable = Object.entries(codes);
-                        for (code of codesIterable)
-                            zip.file(code[0].substring(8) + ".obli.js", code[1]);
+                let cZip = new JSZip();
+                chrome.storage.local.get("_proj___" + req.data, (scripts) => {
+                    console.dir(scripts)
+                    const ourScripts = scripts["_proj___" + req.data].map(x => "_script_" + x);
+                    const ourPrefs   = ourScripts.map(x => x.replace("_script_", "_meta___"));
 
-                        zip.generateAsync({type:"blob"})
+                    chrome.storage.local.get(ourScripts.concat(ourPrefs), (codes) => {
+                        const codesIterable = Object.entries(codes);
+                        for (code of codesIterable) {
+                            const thisCode = (typeof code[1] === "string") ? code[1] : JSON.stringify(code[1]);
+                            cZip.file(
+                                code[0].substring(8) 
+                                    + 
+                                    ((code[0].substring(0, 8) == "_script_") ? ".obli.js" : ".obli.json"),
+                                thisCode
+                            );
+                        }
+
+                        cZip.generateAsync({type:"blob"})
                             .then(function(content) {
                                 chrome.downloads.download({
                                     "url": URL.createObjectURL(content),
