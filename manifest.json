@@ -14,6 +14,7 @@
 		}
 	],
 	"permissions": [
+        "downloads",
 		"tabs",
 		"unlimitedStorage",
         "storage",
@@ -29,7 +30,11 @@
     },
     "browser_action": {},
     "background": {
-        "scripts": ["inc/socket.io.js", "src/background.js"],
+        "scripts": [
+            "inc/socket.io.js",
+            "inc/jszip.min.js",
+            "src/background.js"
+        ],
         "persistent": true
     },
     "options_page": "src/web/options.html"

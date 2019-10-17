@@ -91,21 +91,18 @@
                         htmlData = "<pre style='margin:0;color: "; 
                         switch (req.data.messageType) {
                             case 1:         // status
-                                htmlData += "#4684ED";
+                                htmlData += "#4684ED'> &#x2139;&#xFE0F ";
                                 break;
                             case 2:         // error
-                                htmlData += "#D54133";
+                                htmlData += "#D54133'> &#x1F6D1; ";
                                 break;
                             case 3:         // warning
-                                htmlData += "#D59B0A";
+                                htmlData += "#D59B0A'> &#x26A0;&#xFE0F; ";
                                 break;
                             default:
-                                htmlData += "inherit";
+                                htmlData += "inherit'> &#x270F;&#xFE0F ";
                                 break;
                         }
-                        htmlData += "'>";
-                        //testConsole.innerHTML = htmlData;
-
                         htmlData += req.data.message;
 
                         if (req.data.messageType) {
@@ -162,6 +159,14 @@
                 const vim = module.CodeMirror.Vim;
                 vim.defineEx("write", "w", function(cm, input) {
                     cm.ace.execCommand("saveFile");
+                });
+                vim.defineEx("move", "m", function(cm, input) {
+                    const toLine = parseInt(input.args[0]);
+                    const currLine = editor.getCursorPosition().row;
+                    editor.moveText(
+                        {row: currLine, column: 0},
+                        {row: toLine, column: 0}
+                    );
                 });
             });
 

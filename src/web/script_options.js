@@ -15,18 +15,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         document.getElementById("name").innerHTML = currObj[0];
         document.getElementById("save").addEventListener("click", () => {
-            console.log("hello there")
-            opts = {
-                "domains": document.getElementById("domains").value,
-                "testpages": document.getElementById("testpages").value,
-                "enabled": document.getElementById("enabled").checked,
-                "project": document.getElementById("project").value
-            };
-
             chrome.runtime.sendMessage({
                 "event": "setopts",
                 "script": currObj[0],
-                "data": opts
+                "data": {
+                    "domains": document.getElementById("domains").value,
+                    "testpages": document.getElementById("testpages").value,
+                    "enabled": document.getElementById("enabled").checked
+                }
             });
         });
 

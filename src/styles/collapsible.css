@@ -2,6 +2,7 @@
 
 .wrap-collabsible {
   margin-bottom: 1.2rem 0;
+  position: relative;
 }
 
 input[type='checkbox'] {
@@ -10,26 +11,14 @@ input[type='checkbox'] {
 
 .lbl-toggle {
   display: block;
-
-  font-weight: bold;
-  font-family: monospace;
-  font-size: 1.2rem;
-  text-transform: uppercase;
+  border: 4px double #e5e5e5;
   text-align: center;
-
-  padding: 1rem;
-
-  color: #A77B0E;
-  background: #FAE042;
-
+  padding: 0.6rem;
   cursor: pointer;
-
-  border-radius: 7px;
-  transition: all 0.25s ease-out;
 }
 
 .lbl-toggle:hover {
-  color: #7C5A0B;
+  color: #00adb5;
 }
 
 .lbl-toggle::before {
@@ -43,7 +32,7 @@ input[type='checkbox'] {
   margin-right: .7rem;
   transform: translateY(-2px);
 
-  transition: transform .2s ease-out;
+  transition: transform .1s ease-out;
 }
 
 .toggle:checked + .lbl-toggle::before {
@@ -53,22 +42,16 @@ input[type='checkbox'] {
 .collapsible-content {
   max-height: 0px;
   overflow: hidden;
-  transition: max-height .25s ease-in-out;
+  transition: max-height .1s ease-in-out;
 }
 
 .toggle:checked + .lbl-toggle + .collapsible-content {
   max-height: 350px;
 }
 
-.toggle:checked + .lbl-toggle {
-  border-bottom-right-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
 .collapsible-content .content-inner {
-  background: rgba(250, 224, 66, .2);
-  border-bottom: 1px solid rgba(250, 224, 66, .45);
-  border-bottom-left-radius: 7px;
-  border-bottom-right-radius: 7px;
-  padding: .5rem 1rem;
+    border-bottom: 4px double #e5e5e5;
+    border-left: 4px double #e5e5e5;
+    border-right: 4px double #e5e5e5;
+    padding: .5rem 1rem;
 }

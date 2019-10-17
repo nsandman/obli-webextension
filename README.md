@@ -25,30 +25,35 @@ TPI.myName
 ```
 Name of the script as set when saved to obli
 
+```js
+TPI.isTesting
+```
+If your script is running in a debug window, this will be true
+
 ## Action
 This API provides a simple set of actions for interfacing with the DOM. The following can be called from it:
 
 ### click()
 ```js
-Action.click(DOMElement el)
+Action.click(DOMElement el, function next())
 ```
 Click on DOM element `el`
 
 ### setTextValue()
 ```js
-Action.setTextValue(DOMElement el, string val)
+Action.setTextValue(DOMElement el, string val, function next())
 ```
 Set `value` of DOM element `el` to string `val` and dispatch update event 
 
 ### setCheckValue()
 ```js
-Action.setCheckValue(DOMElement el, bool val)
+Action.setCheckValue(DOMElement el, bool val, function next())
 ```
 Set `checked` attribute of checkbox `el` to boolean `val` and dispatch update event 
 
 ### clear()
 ```js
-Action.clear(DOMElement el)
+Action.clear(DOMElement el, function next())
 ```
 Set `value` of DOM element `el` to an empty string
 

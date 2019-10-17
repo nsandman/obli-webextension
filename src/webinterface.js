@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         // setTextValue(DOMElement el, string val)
         setTextValue: function(el, val, next) {
-           __setNative(el, "value", val); 
+            __setNative(el, "value", val); 
             next();
         },
 
@@ -66,7 +66,7 @@ document.addEventListener("DOMContentLoaded", function() {
         if (naEnabled)
             NaturalAction = {
                 __randomInRange: function(min, max) {
-                  return Math.random() < 0.5 ? ((1-Math.random()) * (max-min) + min) : (Math.random() * (max-min) + min);
+                    return Math.random() < 0.5 ? ((1-Math.random()) * (max-min) + min) : (Math.random() * (max-min) + min);
                 },
 
                 __sendMessage: function(method, data, cb, includeTimeout=true) {
@@ -158,122 +158,122 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     };
 
+
+    function baseprint(name, type, tolog) {
+        console.dir(name);
+        chrome.runtime.sendMessage({
+            "event": "testconsole",
+            "data": {
+                script: name,
+                messageType: type,
+                message: tolog
+            }
+        });
+    }
+
     //------------ Get & process injections -------------------------
     chrome.runtime.sendMessage({event: "getscripts"}, (scripts) => {
         // perform script injections
         let injections = Object.entries(scripts);
 
         for (var i = 0; i < injections.length; i++) {
-            (function(){
-                const TPI = {
-                    myName: injections[i][0],
-                    isTesting: false
-                };
+            let sandbox = {};
+            const TPI = {
+                myName: injections[i][0].slice(0),
+                isTesting: false
+            };
 
-                // same API as DataStore
-                const SharedDataStore = {
-                    __doGetSet: function(key) {
-                        Messenger.listen("get_" + key, (data, cb) => {
-                            DataStore.getKeys(key, (r) => {
-                                cb(r);
-                            });
+            // same API as DataStore
+            const SharedDataStore = {
+                __doGetSet: function(key) {
+                    Messenger.listen("get_" + key, (data, cb) => {
+                        DataStore.getKeys(key, (r) => {
+                            cb(r);
                         });
-                        Messenger.listen("set_" + key, (data) => {
-                            DataStore.saveKey(key, data["value"]);
-                        });
-                    },
+                    });
+                    Messenger.listen("set_" + key, (data) => {
+                        DataStore.saveKey(key, data["value"]);
+                    });
+                },
 
-                    saveKey: function(key, val, next) {
+                saveKey: function(key, val, next) {
+                    this.__doGetSet(key);
+                    DataStore.saveKey(key, val, next);
+                },
+
+                saveKeys: function(options, next) {
+                    for (key of Object.keys(options)) {
                         this.__doGetSet(key);
-                        DataStore.saveKey(key, val, next);
-                    },
+                    }
+                    DataStore.saveKeys(options, next);
+                },
+                getKeys: DataStore.getKeys
+            };
 
-                    saveKeys: function(options, next) {
-                        for (key of Object.keys(options)) {
-                            this.__doGetSet(key);
+            const Messenger = {
+                // send(string method, object data, (optional)function callback)
+                send: function(method, data, cb) {
+                    const payload = {
+                        "event": "msgsend",
+                        "data": {
+                            "module": TPI.myName,
+                            "name": method,
+                            "data": data
                         }
-                        DataStore.saveKeys(options, next);
-                    },
-                    getKeys: DataStore.getKeys
-                };
+                    };
+                    if (cb)
+                        return chrome.runtime.sendMessage(payload, cb);
+                    else
+                        return chrome.runtime.sendMessage(payload);
+                },
 
-                const Messenger = {
-                    // send(string method, object data, (optional)function callback)
-                    send: function(method, data, cb) {
-                        const payload = {
-                            "event": "msgsend",
-                            "data": {
-                                "module": TPI.myName,
-                                "name": method,
-                                "data": data
-                            }
-                        };
-                        if (cb)
-                            return chrome.runtime.sendMessage(payload, cb);
-                        else
-                            return chrome.runtime.sendMessage(payload);
-                    },
+                // listen(string method, function cb)
+                listen: function(method, cb) {
+                    chrome.runtime.sendMessage({
+                        "event": "msglisten",
+                        "data": {
+                            "method": method,
+                            "cb": cb
+                        }
+                    });
+                }
+            };
 
-                    // listen(string method, function cb)
-                    listen: function(method, cb) {
-                        chrome.runtime.sendMessage({
-                            "event": "msglisten",
-                            "data": {
-                                "method": method,
-                                "cb": cb
-                            }
-                        });
-                    }
-                };
+            const code = injections[i][1];
+            chrome.runtime.sendMessage({
+                event: "ismanagedwindow"
+            }, (isTesting) => {
+                TPI.isTesting = isTesting;
+                if (isTesting) {
+                    sandbox.console = {
+                        log: (tolog) => baseprint(TPI.myName, 0, tolog),
+                        info: (tolog) => baseprint(TPI.myName, 1, tolog),
+                        error: (tolog) => baseprint(TPI.myName, 2, tolog),
+                        warn: (tolog) => baseprint(TPI.myName, 3, tolog)
+                    };
 
-                chrome.runtime.sendMessage({
-                    event: "ismanagedwindow"
-                }, (isTesting) => {
-                    TPI.isTesting = isTesting;
-                    if (isTesting) {
-                        console.baseprint = (type, tolog) => {
-                            chrome.runtime.sendMessage({
-                                "event": "testconsole",
-                                "data": {
-                                    script: TPI.myName,
-                                    messageType: type,
-                                    message: tolog
-                                }
-                            });
-                        };
-                        console.log = (tolog) => console.baseprint(0, tolog);
-                        console.info = (tolog) => console.baseprint(1, tolog);
-                        console.error = (tolog) => console.baseprint(2, tolog);
-                        console.warn = (tolog) => console.baseprint(3, tolog);
+                    window.addEventListener("error", e => {
+                        if (e.type == "error")
+                            sandbox.console.error(`ERROR: '${TPI.myName}'@${e.lineno}:${e.colno}: ${e.message}`);
+                        else if (e.type == "warning")
+                            sandbox.console.warn(`WARNING: '${TPI.myName}'@${e.lineno}:${e.colno}: ${e.message}`);
+                    });        
+                }
 
-                        window.addEventListener("error", e => {
-                            if (e.type == "error")
-                                console.error(`ERROR: '${TPI.myName}'@${e.lineno}:${e.colno}: ${e.message}`);
-                            else if (e.type == "warning")
-                                console.warn(`WARNING: '${TPI.myName}'@${e.lineno}:${e.colno}: ${e.message}`);
-                        });        
-                    }
-                });
-
-                const code = injections[i][1];
                 chrome.runtime.sendMessage({
                     "event": "getopts",
-                    "script": injections[i][0]
+                    "script": TPI.myName 
                 }, (prefs) => {
                     const url = window.location.href;
                     const re  = new RegExp(prefs["domains"], "g");
 
                     if (prefs["enabled"] && url.match(re)) {
-                        try {
-                            eval('"use strict";\n' + code);
-                        } catch(e) {
-                            console.error('obli found an error in script "' + injections[i][0] + '": ' + "" + e);
-                        }
+                        eval('with (sandbox) {' + code + '};');
                         if (TPI.isTesting)
-                            console.info("<strong> --- INFO: Loaded script '" + TPI.myName + "' at " + new Date().toLocaleTimeString() + " --- </strong>");
+                            sandbox.console.info("<strong> --- INFO: Loaded script '" + TPI.myName + "' at " + new Date().toLocaleTimeString() + " --- </strong>");
                     }
                 });
-            })(); 
+            });
         }
         return true;
     });

@@ -44,6 +44,7 @@ chrome.storage.local.get("dispatcher", (item) => {
                 });
                 return true;
 
+            case "saveproject":
             case "saveproperties":
             case "savescript":
                 chrome.storage.local.set(req.options);
@@ -72,6 +73,26 @@ chrome.storage.local.get("dispatcher", (item) => {
                     }
                     response(scripts);
                 });
+                return true;
+
+            case "getprojects":
+                chrome.storage.local.get(null, (items) => {
+                    let scripts = {};
+                    const aItems = Array.from(Object.entries(items));
+                    
+                    for (item of aItems) {
+                        if (item[0].substring(0, 8) == "_proj___") 
+                            scripts[item[0].substring(8)] = items[item[0]];
+                    }
+                    response(scripts);
+                });
+                return true;
+
+            case "saveprojectoptions":
+                let spOpts = {};
+                spOpts["_proj___" + req.data.project] = req.data.scripts;
+
+                chrome.storage.local.set(spOpts);
                 return true;
 
             case "getscript":
@@ -134,17 +155,42 @@ chrome.storage.local.get("dispatcher", (item) => {
                         }
                     }
 
-                    console.dir(objectIterable)
                     chrome.storage.local.remove(objectIterable[req.script][0], () => {
                         response("ok");
                     });
                 });
                 return true;
 
+            case "rmproject":
+                chrome.storage.local.remove("_proj___" + req.data, () => {
+                    response("ok");
+                });
+                return true;
+
+            case "dlproject":
+                let zip = new JSZip();
+                chrome.storage.local.get(req.data, (scripts) => {
+                    const ourScripts = scripts[req.data].map(x => "_script_" + x);
+                    chrome.storage.local.get(ourScripts, (codes) => {
+                        const codesIterable = Object.entries(codes);
+                        for (code of codesIterable)
+                            zip.file(code[0].substring(8) + ".obli.js", code[1]);
+
+                        zip.generateAsync({type:"blob"})
+                            .then(function(content) {
+                                chrome.downloads.download({
+                                    "url": URL.createObjectURL(content),
+                                    "filename": req.data + ".obli"
+                                });
+                            });
+                    });
+                });
+                return true;
+
             case "getproperty":
                 chrome.storage.local.get(req.data, (item) => {
-        response(item[req.data]);
-            });
+                    response(item[req.data]);
+                });
                 return true;
 
             case "msgsend":
