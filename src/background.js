@@ -1,8 +1,59 @@
 let naEnabled = false;
 let managedWindows = [];
 
-chrome.storage.local.get("dispatcher", (item) => {
-    const dispatchSocket = io(item["dispatcher"]);
+function getAllOfPrefix(prefix, callback, defaultValue=null) {
+    // get all local storage with null
+    chrome.storage.local.get(null, (items) => {
+        let scripts = {};
+        const aItems = Array.from(Object.entries(items));
+
+        for (item of aItems) {
+            if (item[0].substring(0, 8) == prefix) 
+                scripts[item[0].substring(8)] = items[item[0]];
+        }
+        callback(scripts);
+    });
+    return true;
+}
+
+function saveRaw(options, prefix="", callback=function(x){}) {
+    let optionsCopy = options;
+
+    if (prefix && optionsCopy) {
+        let optionKeys = Object.keys(optionsCopy);
+        for (key of optionKeys)
+            optionsCopy.renameProperty(key, prefix + key);
+    }
+
+    chrome.storage.local.set(optionsCopy, callback);
+    return true;
+}
+
+function getRaw(name, callback=function(x){}, prefix="", defaultValue=null) {
+    const fullName = prefix + name; 
+
+    chrome.storage.local.get(fullName, (item) => {
+        if (!(fullName in item) && defaultValue) {
+            let opts = {};
+            opts[fullName] = defaultValue;
+
+            chrome.storage.local.set(opts, () => {
+                callback(defaultValue);
+            });
+        } else {
+            callback(item[fullName]);
+        }
+    });
+    return true;
+}
+
+function removeRaw(name, prefix="", callback=function(x){}) {
+    chrome.storage.local.remove(prefix + name, callback);
+    return true;
+}
+
+chrome.storage.local.get("dispatcher", (dispatcher) => {
+    const dispatchSocket = io(dispatcher["dispatcher"]);
 
     let naSocket;
     try {
@@ -37,6 +88,7 @@ chrome.storage.local.get("dispatcher", (item) => {
     });
 
     chrome.runtime.onMessage.addListener((req, sender, response) => {
+        const data = req.data;
         switch (req.event) {
             case "ismanagedwindow":
                 chrome.windows.getCurrent((win) => {
@@ -44,13 +96,27 @@ chrome.storage.local.get("dispatcher", (item) => {
                 });
                 return true;
 
-            case "saveproject":
-            case "saveproperties":
-            case "savescript":
-                chrome.storage.local.set(req.options);
-                break;
+            /*
+            {
+                event: "save_raw",
+                data: {
+                    prefix: str,
+                    options: obj
+                }
+            }
+             */
+            case "save_raw": return saveRaw(data["options"], prefix=data["prefix"], callback=response);
 
-            case "createproj_file":
+            /*
+            {
+                event: "createproj_file",
+                data: {
+                    name: str,
+                    zip: Blob
+                }
+            }
+             */
+            case "createproj_file": {
                 JSZip.loadAsync(req.data.zip)
                     .then((zip) => {
                         let projNames = [];
@@ -63,8 +129,8 @@ chrome.storage.local.get("dispatcher", (item) => {
                                 zip.file(name + ".obli.json").async("string").then((options) => {
                                     file.async("string").then((data) => {
                                         let opts = {};
-                                        opts["_script_" + name] = data;
-                                        opts["_meta___" + name] = JSON.parse(options);
+                                        opts[Prefixes.script + name] = data;
+                                        opts[Prefixes.options + name] = JSON.parse(options);
 
                                         chrome.storage.local.set(opts);
                                     });
@@ -73,93 +139,76 @@ chrome.storage.local.get("dispatcher", (item) => {
                         });
 
                         let fspOpts = {};
-                        fspOpts["_proj___" + req.data.name] = projNames;
+                        fspOpts[Prefixes.project + req.data.name] = projNames;
 
                         chrome.storage.local.set(fspOpts, () => response("ok"));
                     });
                 return true;
+            }
 
-            case "checkna":
-                response(naEnabled);
-                break;
-            case "naServerEvent":
+            case "checkna": response(naEnabled); break;
+            case "naServerEvent": {
                 naSocket.emit("event", req.data, response); 
-                //if (naEnabled)
-                    //naSocket.emit(data["name"], data["data"], (res) => {
-                        //response(res);
-                    //});
                 return true;
+            }
 
-            case "getscripts":
-                // get all local storage with null
-                chrome.storage.local.get(null, (items) => {
-                    let scripts = {};
-                    const aItems = Array.from(Object.entries(items));
-                    console.dir(aItems);
+            // GET ALL events: get all scripts that start with a certain prefix
+            case "getscripts":  return getAllOfPrefix(Prefixes.script,  response);
+            case "getprojects": return getAllOfPrefix(Prefixes.project, response);
 
-                    for (item of aItems) {
-                        if (item[0].substring(0, 8) == "_script_") 
-                            scripts[item[0].substring(8)] = items[item[0]];
-                    }
-                    response(scripts);
-                });
-                return true;
+            /*
+            {
+                event: "saveprojectoptions",
+                data: {
+                    project: str,
+                    scripts: str[]
+                }
+            }
+            */
+            case "saveprojectoptions": {
+                let opts = {};
+                opts[data.project] = data.scripts;
 
-            case "getprojects":
-                chrome.storage.local.get(null, (items) => {
-                    let scripts = {};
-                    const aItems = Array.from(Object.entries(items));
-                    
-                    for (item of aItems) {
-                        if (item[0].substring(0, 8) == "_proj___") 
-                            scripts[item[0].substring(8)] = items[item[0]];
-                    }
-                    response(scripts);
-                });
-                return true;
+                return saveRaw(opts, Prefixes.project, response);
+            }
 
-            case "saveprojectoptions":
-                let spOpts = {};
-                spOpts["_proj___" + req.data.project] = req.data.scripts;
+            /*
+            {
+                event: "setopts",
+                data: {
+                    project: script,
+                    scripts: obj
+                }
+            }
+            */
+            case "setopts": {
+                let opts = {};
+                opts[data.script] = data.data;
 
-                chrome.storage.local.set(spOpts);
-                return true;
+                return saveRaw(opts, Prefixes.options, response);
+            }
 
-            case "getscript":
-                chrome.storage.local.get("_script_" + req.script, (item) => {
-                    response(item);
-                });
-                return true;
-
+            /* RAW GET events: data is a string */
             case "getopts":
-                const scriptName = "_meta___" + req.script;
-                chrome.storage.local.get(scriptName, (item) => {
-                    if (!(scriptName in item)) {
-                        const defaults = {
-                            "enabled": true,
-                            "domains": "",
-                            "testpages": "",
-                            "project": ""
-                        };        
+                return getRaw(
+                    data, 
+                    response, 
+                    prefix=Prefixes.options, 
+                    defaultValue={
+                        "enabled": true,
+                        "domains": "",
+                        "testpages": ""
+                    });
 
-                        let opts = {};
-                        opts[scriptName] = defaults;
+            case "getscript": return getRaw(data, response, prefix=Prefixes.script);
+            case "getproperty": return getRaw(data, response);
+            /* end GET RAW events */
 
-                        chrome.storage.local.set(opts, () => {
-                            response(defaults);
-                        });
-                    } else {
-                        response(item[scriptName]);
-                    }
-                });
-                return true;
-
-            case "testpage":
-                const testData = req.data;
+            case "testpage": {
                 chrome.windows.create({
-                    "url": testData["url"],
-                    "left": testData["x"],
-                    "width": testData["width"],
+                    "url": data["url"],
+                    "left": data["x"],
+                    "width": data["width"],
                     "focused": true,
                     "setSelfAsOpener": true
                 }, (win) => {
@@ -169,57 +218,38 @@ chrome.storage.local.get("dispatcher", (item) => {
                     response();
                 }); 
                 return true;
+            }
 
-            case "setopts":
-                let opts = {};
-                opts["_meta___" + req.script] = req.data;
-                chrome.storage.local.set(opts);
-                break;
+            case "rmscript": {
+                getAllOfPrefix(Prefixes.project, (projects) => {
+                    let projectsUpdated = projects;
 
-            case "rmscript":
-                chrome.storage.local.get(null, (items) => {
-                    let objectIterable = Object.entries(items);
-                    for (let i = objectIterable.length; i--;) {
-                        const prefix = objectIterable[i][0].substring(0, 8);
-                        const rsName = objectIterable[req.script][0].substring(8);
+                    const projectsIterable = Object.entries(projects);
 
-                        if (
-                            prefix == "_proj___" && 
-                            objectIterable[i][1].includes(rsName)
-                        ) {
-                            objectIterable[i][1].splice(objectIterable[i][1].indexOf(rsName), 1);
-
-                            let fixProjOpts = {};
-                            fixProjOpts[objectIterable[i][0]] = objectIterable[i][1];
-
-                            chrome.storage.local.set(fixProjOpts);
+                    // [0]=name, [1]=scripts
+                    for (project of projectsIterable) {
+                        if (project[1].includes(data)) {
+                            projects[project[0]] = project[1].remove(data);
+                        } 
+                        else {
+                            delete projects[project[0]];
                         }
-
-                        if (prefix != "_script_")
-                            objectIterable.splice(i, 1);
                     }
 
-                    chrome.storage.local.remove([
-                        objectIterable[req.script][0], 
-                        objectIterable[req.script][0].replace("_script_", "_meta___")
-                    ], () => {
-                        response("ok");
-                    });
+                    saveRaw(projects, prefix=Prefixes.project);
+                    removeRaw(data, prefix=Prefixes.script);
+                    removeRaw(data, prefix=Prefixes.options);
                 });
                 return true;
+            }
 
-            case "rmproject":
-                chrome.storage.local.remove("_proj___" + req.data, () => {
-                    response("ok");
-                });
-                return true;
+            case "rmproject": return removeRaw(data, prefix=Prefixes.project, callback=response);
+            case "dlproject": {
+                const zipDl = (scripts) => {
+                    const cZip = new JSZip();
 
-            case "dlproject":
-                let cZip = new JSZip();
-                chrome.storage.local.get("_proj___" + req.data, (scripts) => {
-                    console.dir(scripts)
-                    const ourScripts = scripts["_proj___" + req.data].map(x => "_script_" + x);
-                    const ourPrefs   = ourScripts.map(x => x.replace("_script_", "_meta___"));
+                    const ourScripts = scripts.map(x => Prefixes.script + x);
+                    const ourPrefs   = scripts.map(x => Prefixes.options + x);
 
                     chrome.storage.local.get(ourScripts.concat(ourPrefs), (codes) => {
                         const codesIterable = Object.entries(codes);
@@ -228,7 +258,7 @@ chrome.storage.local.get("dispatcher", (item) => {
                             cZip.file(
                                 code[0].substring(8) 
                                     + 
-                                    ((code[0].substring(0, 8) == "_script_") ? ".obli.js" : ".obli.json"),
+                                    ((code[0].substring(0, 8) == Prefixes.script) ? ".obli.js" : ".obli.json"),
                                 thisCode
                             );
                         }
@@ -237,36 +267,35 @@ chrome.storage.local.get("dispatcher", (item) => {
                             .then(function(content) {
                                 chrome.downloads.download({
                                     "url": URL.createObjectURL(content),
-                                    "filename": req.data + ".obli"
+                                    "filename": data + ".obli"
                                 });
                             });
                     });
-                });
-                return true;
+                };
 
-            case "getproperty":
-                chrome.storage.local.get(req.data, (item) => {
-                    response(item[req.data]);
-                });
-                return true;
+                return getRaw(data, zipDl, Prefixes.project);
+            }
 
-            case "msgsend":
-                dispatchSocket.emit("event", request.data, (res) => {
+            case "msgsend": {
+                dispatchSocket.emit("event", data, (res) => {
                     response(res);
                 });
                 return true;
+            }
 
-            case "msglisten":
-                dispatchSocket.on(request.data.event, request.data.cb);
+            case "msglisten": {
+                dispatchSocket.on(data.event, data.cb);
                 break;
-            
+            }
+
+            // ignore these so other scripts can have handlers
             case "testconsole":
                 break;
-
-            default:
+            
+            default: {
                 response("ERR: Unknown request");
                 break;
+            }
         }
     });
 });
-

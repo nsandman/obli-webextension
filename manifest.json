@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"name": "obli",
-	"version": "0.0.01",
+	"version": "0.1.0",
 	"content_scripts": [
 		{
 			"all_frames": true, 
@@ -33,6 +33,7 @@
         "scripts": [
             "inc/socket.io.js",
             "inc/jszip.min.js",
+            "src/constants.js",
             "src/background.js"
         ],
         "persistent": true

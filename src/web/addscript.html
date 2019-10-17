@@ -107,8 +107,13 @@
           text-decoration: none;
           cursor: pointer;
         }
+
+        #obliversion {
+          position: absolute; 
+          left: 0; 
+          padding-left: 10px;
+        }
     </style>
-    <script src="addscript.js"></script>
     <title>obli - Add Script</title>
 </head>
 <body>
@@ -133,9 +138,7 @@
         <div id="editor"></div>
         <div id="console" style="">
             <header>
-                <span style="position: absolute; left: 0; padding-left: 10px;">
-                    obli v0.0.1
-                </span>
+                <span id="obliversion">obli v</span>
                 <center>
                     <span id="namehere"></span>
                 </center>
@@ -143,7 +146,8 @@
             <div id="conscroll" />
         </div>
     </div>
-    <script type="text/javascript" src="vendor/ace.js"></script>
-    <script type="text/javascript" src="main.js"></script>        
+    <script type="text/javascript" src="vendor/ace.js"></script>     
+    <script src="addscript.js"></script>
+    <script src="../constants.js"></script>
 </body>
 </html>
