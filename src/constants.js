@@ -35,9 +35,9 @@ try {
     };
 }
 
-const reload = () => {
-    window.location.reload();
-};
+function reload() {
+    (window.location || document.location).reload();
+}
 
 // https://html-online.com/articles/get-url-parameters-javascript/
 function getUrlVars() {

@@ -221,7 +221,7 @@ chrome.storage.local.get("dispatcher", (dispatcher) => {
             }
 
             case "rmscript": {
-                getAllOfPrefix(Prefixes.project, (projects) => {
+                return getAllOfPrefix(Prefixes.project, (projects) => {
                     let projectsUpdated = projects;
 
                     const projectsIterable = Object.entries(projects);
@@ -238,9 +238,8 @@ chrome.storage.local.get("dispatcher", (dispatcher) => {
 
                     saveRaw(projects, prefix=Prefixes.project);
                     removeRaw(data, prefix=Prefixes.script);
-                    removeRaw(data, prefix=Prefixes.options);
+                    removeRaw(data, prefix=Prefixes.options, callback=response);
                 });
-                return true;
             }
 
             case "rmproject": return removeRaw(data, prefix=Prefixes.project, callback=response);

@@ -61,12 +61,22 @@ function populateClassActionButtons() {
 }
 
 function populateIdActionButtons() {
+    const dispatcherInput = document.getElementById("dispatcher");
+    chrome.runtime.sendMessage({
+        event: "getproperty", 
+        data: "dispatcher"
+    }, (res) => {
+        if (res)
+            dispatcherInput.value = res;
+    });
     document.getElementById("savesettings").addEventListener("click", function() {
         const dispatcherUrl = dispatcherInput.value;
         chrome.runtime.sendMessage({
-            event: "saveproperties", 
+            event: "save_raw", 
             data: {
-                "dispatcher": dispatcherUrl
+                options: {
+                    dispatcher: dispatcherUrl
+                }
             }
         }, reload);            
     });
@@ -181,15 +191,6 @@ function uploadFileCallback(e) {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
-    const dispatcherInput = document.getElementById("dispatcher");
-    chrome.runtime.sendMessage({
-        event: "getproperty", 
-        data: "dispatcher"
-    }, (res) => {
-        if (res)
-            dispatcherInput.value = res;
-    });
-
     chrome.runtime.sendMessage({"event": "getscripts"}, (scripts) => {
         chrome.runtime.sendMessage({"event": "getprojects"}, (projects) => {
             const allScripts  = Object.keys(scripts); 

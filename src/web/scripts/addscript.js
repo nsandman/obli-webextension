@@ -27,6 +27,8 @@ function createEditor() {
         editor.setKeyboardHandler("ace/keyboard/vim");
         ace.config.loadModule("ace/keyboard/vim", function(module) {
             const vim = module.CodeMirror.Vim;
+
+            // :w calls save command
             vim.defineEx("write", "w", function(cm, input) {
                 cm.ace.execCommand("saveFile");
             });
@@ -42,6 +44,8 @@ function createEditor() {
             });
         });
 
+        // save commands
+        document.getElementById("button").addEventListener("click", saveEditorContent); 
         editor.commands.addCommand({
             name: "saveFile",
             bindKey: {
@@ -62,6 +66,7 @@ function populateEditor(name) {
         if (script) {
             editor.insert(script);
             editor.gotoLine(0);
+            editor.focus();
         }
     });
 }
@@ -128,40 +133,44 @@ function addTestSiteShortcuts(name) {
     });
 }
 
+function setHtmlStyleFromMsgType(msgType) {
+    let style = {
+        color: "inherit",
+        emoji: "&#x270F;&#xFE0F" 
+    };
+
+    switch (msgType) {
+        case 1:         // status
+            style.color = "#4684ED"; 
+            style.emoji = "&#x2139;&#xFE0F"; 
+            break;
+        case 2:         // error
+            style.color = "#D54133"; 
+            style.emoji = "&#x1F6D1;"; 
+            break;
+        case 3:         // warning
+            style.color = "#D59B0A"; 
+            style.emoji = "&#x26A0;&#xFE0F;"; 
+            break;
+    }
+    return style;
+}
+
 function addLoggingListener(name) {
     const testConsole = document.getElementById("conscroll");
     chrome.runtime.onMessage.addListener((req, sender, response) => {
-        switch (req.event) {
-            case "testconsole":
-                if (req.data.script == name) {
-                    let htmlData = "";
-                    
-                    // TODO make this not disgusting
-                    htmlData = "<pre style='margin:0;color: "; 
-                    switch (req.data.messageType) {
-                        case 1:         // status
-                            htmlData += "#4684ED'> &#x2139;&#xFE0F ";
-                            break;
-                        case 2:         // error
-                            htmlData += "#D54133'> &#x1F6D1; ";
-                            break;
-                        case 3:         // warning
-                            htmlData += "#D59B0A'> &#x26A0;&#xFE0F; ";
-                            break;
-                        default:
-                            htmlData += "inherit'> &#x270F;&#xFE0F ";
-                            break;
-                    }
-                    htmlData += req.data.message;
+        if (req.event == "testconsole" && req.data.script == name) {
+            const scriptStyle = setHtmlStyleFromMsgType(req.data.messageType);
 
-                    if (req.data.messageType) {
-                        htmlData += "</pre>";
-                    }
-                    testConsole.innerHTML += htmlData;
-                    testConsole.scrollTop = testConsole.scrollHeight;   // scroll to bottom
-                }
-                break;
-        }        
+            const logPre = document.createElement("pre");
+            logPre.style.margin = 0;
+            logPre.style.color  = scriptStyle.color;
+
+            logPre.innerHTML = ` ${scriptStyle.emoji} ${req.data.message}`;
+
+            testConsole.appendChild(logPre);
+            testConsole.scrollTop = testConsole.scrollHeight;   // scroll to bottom
+        }
     });
 }
 
@@ -176,6 +185,4 @@ document.addEventListener("DOMContentLoaded", () => {
         addTestSiteShortcuts(name);
         addLoggingListener(name);
     }
-
-    document.getElementById("button").addEventListener("click", saveEditorContent); 
 });
