@@ -162,10 +162,14 @@ document.addEventListener("DOMContentLoaded", function() {
             const DataStore = {
                 // saveKey(string key, obj val, function next())
                 saveKey: function(key, val, next) {
-                    if (next == null) next = function(){};
-
                     let options = {};
                     options[key] = val;
+
+                    this.saveKeys(options, next);
+                },
+
+                saveKeys: function(options, next) {
+                    if (next == null) next = function(){};
 
                     chrome.runtime.sendMessage({
                         event: "saveDSKey",
