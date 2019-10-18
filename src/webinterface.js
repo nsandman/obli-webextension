@@ -176,6 +176,28 @@ document.addEventListener("DOMContentLoaded", function() {
                     }, next);
                 },
 
+                getKeys: function(keys, next) {
+                    let keyMap = {};
+
+                    if (typeof keys === "string")
+                        return this.getKey(keys, (res) => {
+                            let opts = {};
+                            opts[keys] = res;
+
+                            next(opts);
+                        });
+
+                    for (let i = keys.length-1; i >= 0; i--) {
+                        const keyName = keys[i];
+
+                        this.getKey(keyName, (res) => {
+                            keyMap[keyName] = res;
+                            if (i == 0)
+                                next(keyMap);
+                        });
+                    }
+                },
+
                 // getKeys(string key, function(results))
                 getKey: function(key, next) {
                     chrome.runtime.sendMessage({
