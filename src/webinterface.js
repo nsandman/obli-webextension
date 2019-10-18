@@ -136,31 +136,7 @@ document.addEventListener("DOMContentLoaded", function() {
             };
     });
 
-    const DataStore = {
-        // saveKey(string key, obj val, function next())
-        saveKey: function(key, val, next) {
-            options = {};
-            options[key] = val;
-            return this.saveKeys(options, next);
-        },
-
-        // saveKeys(obj options, function next())
-        saveKeys: function(options, next) {
-            if (!next)
-                return chrome.storage.local.set(options);
-
-            return chrome.storage.local.set(options, next);
-        },
-
-        // getKeys(string/string[] keys, function(results))
-        getKeys: function(keys, next) {
-            return chrome.storage.local.get(keys, next);
-        }
-    };
-
-
     function baseprint(name, type, tolog) {
-        console.dir(name);
         chrome.runtime.sendMessage({
             "event": "testconsole",
             "data": {
@@ -181,6 +157,35 @@ document.addEventListener("DOMContentLoaded", function() {
             const TPI = {
                 myName: injections[i][0].slice(0),
                 isTesting: false
+            };
+
+            const DataStore = {
+                // saveKey(string key, obj val, function next())
+                saveKey: function(key, val, next) {
+                    if (next == null) next = function(){};
+
+                    let options = {};
+                    options[key] = val;
+
+                    chrome.runtime.sendMessage({
+                        event: "saveDSKey",
+                        data: {
+                            parent: TPI.myName,
+                            data: options
+                        }
+                    }, next);
+                },
+
+                // getKeys(string key, function(results))
+                getKey: function(key, next) {
+                    chrome.runtime.sendMessage({
+                        event: "getDSKey",
+                        data: {
+                            parent: TPI.myName,
+                            data: key
+                        }
+                    }, next);
+                }
             };
 
             // same API as DataStore
@@ -207,7 +212,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     }
                     DataStore.saveKeys(options, next);
                 },
-                getKeys: DataStore.getKeys
+                getKey: DataStore.getKey
             };
 
             const Messenger = {

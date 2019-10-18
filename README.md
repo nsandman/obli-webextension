@@ -97,19 +97,8 @@ DataStore.saveKey(string key, obj val, function next)
 ```
 Save a single key `key` with value `val`, then call `next()`
 
-### saveKeys
-```js
-options = {
-	"key": "val",
-	"foo": "bar"
-}
-DataStore.saveKeys(object options, function next)
-```
-Save all key-val pairs in options, then call `next()`
-
 ### getKeys
 ```js
-DataStore.getKeys(string keys, function(results))
-DataStore.getKeys(string[] keys, function(results))
+DataStore.getKey(string key, function(results))
 ```
 Get key or keys, and have the results returned in an object

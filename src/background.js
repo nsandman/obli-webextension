@@ -186,6 +186,51 @@ chrome.storage.local.get("dispatcher", (dispatcher) => {
                 return saveRaw(opts, Prefixes.options, response);
             }
 
+            /*
+            {
+                event: "saveDSKey",
+                data: {
+                    parent: str,        // script to edit DS key data for
+                    data: obj
+                }
+            }
+            */
+            case "saveDSKey": {
+                const returnDsKey = (currentOpts) => {
+                    let opts = {};
+                    opts[data.parent] = {...currentOpts, ...data.data};
+
+                    saveRaw(opts, Prefixes.dataStore, response);
+                }
+
+                return getRaw(
+                    data["parent"],
+                    callback=returnDsKey,
+                    prefix=Prefixes.dataStore
+                );
+            }
+
+            /*
+            {
+                event: "getDSKey",
+                data: {
+                    parent: str,        // script to edit DS key data for
+                    data:str
+                }
+            }
+            */
+            case "getDSKey": {
+                const returnSelectedKey = (res) => {
+                    response(res[data.data]);
+                };
+
+                return getRaw(
+                    data["parent"],
+                    callback=returnSelectedKey,
+                    prefix=Prefixes.dataStore
+                );
+            }
+
             /* RAW GET events: data is a string */
             case "getopts":
                 return getRaw(
@@ -222,6 +267,7 @@ chrome.storage.local.get("dispatcher", (dispatcher) => {
                         managedWindow = win.id;
                         for (tab of win.tabs)
                             chrome.tabs.update(tab.id, {});
+                        response();
                     });
                 }
                 else {
@@ -229,9 +275,9 @@ chrome.storage.local.get("dispatcher", (dispatcher) => {
                         active: true,
                         windowId: managedWindow,
                         url: data["url"]
-                    });
+                    }, response);
                 }
-                break;
+                return true;
             }
 
             case "rmscript": {

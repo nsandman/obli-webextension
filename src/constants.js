@@ -1,9 +1,10 @@
 // 8 char prefixes to differentiate
 // uses in LocalStorage
 const Prefixes = {
-    script:  "_script_",
-    options: "_meta___",
-    project: "_proj___"
+    script:    "_script_",
+    options:   "_meta___",
+    project:   "_proj___",
+    dataStore: "_dstore_"
 };
 
 Array.prototype.remove = function() {
