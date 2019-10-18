@@ -78,58 +78,81 @@ function populateScriptNames(name) {
     document.getElementById("obliversion").innerHTML += chrome.runtime.getManifest().version;
 }
 
-function addTestSiteShortcuts(name) {
-    const span = document.getElementsByClassName("close")[0];
-    const modal = document.getElementById("myModal");
+function clearHash() {
+    if (window.location.hash)
+        window.location.hash = "";
+}
+function hideTesting(modal) {
+    modal.style.display = "none";
+    editor.focus();
+    clearHash();
+}
+function showTesting(modal, closeButton) {
+    modal.style.display = "block";
+    window.location.hash = "#" + modal.id;
+    closeButton.addEventListener("click", () => hideTesting(modal));
+}
 
-    const keyOrder = "`1234567890qwertyuiop[]asdfghjkl;zxcvbnm,.";
+function launchTest(test, modal) {
+    chrome.runtime.sendMessage({
+        event: "testpage",
+        data: {
+            url: test,
+            left: window.outerWidth,
+            width: window.screen.width - window.outerWidth
+        }
+    }, () => hideTesting(modal));
+}
+
+function addTestSiteShortcuts(name) {
+    const modal       = document.getElementById("testmodal");
+    const closeButton = document.getElementById("closemodal");
+
+    // Order of shortcut keys to open a test page
+    const keyOrder = "`1234567890qwertyuiop[]asdfghjkl;zxcvbnm,.".split("");
     chrome.runtime.sendMessage({
         event: "getopts",
         data: name 
     }, (options) => {
-        tests = options["testpages"].split("|");
+        let tests = options["testpages"].split("|");
         tests.unshift("about:blank");
 
         const testPages = document.getElementById("pages");
         for (let i = 0; i < tests.length; i++) {
             const row = testPages.insertRow(i);
 
+            row.style.cursor = "pointer";
+            row.addEventListener("click", (e) => launchTest(tests[i], modal));
+
             const cell0 = row.insertCell(0);
             const cell1 = row.insertCell(1);
+            const cell2 = row.insertCell(2);
 
-            document.addEventListener("keydown", (e) => {
-                if (modal.style.display != "none" && modal.style.display) {
-                    if (e.key == keyOrder[i])
-                        chrome.runtime.sendMessage({
-                            "event": "testpage",
-                            "data": {
-                                "script": parseInt(getUrlVars()["r"]),
-                                "url": tests[i],
-                                "x": window.outerWidth,
-                                "width": window.screen.width - window.outerWidth
-                            }
-                        }, () => span.click());
-                    else if (e.key == "Escape")
-                        span.click();
-                }
-            });
+            cell1.style.maxWidth  = "1px";
+            cell2.style.textAlign = "right";
 
             cell0.innerHTML = "<strong>" + keyOrder[i] + "</strong>";
             cell1.innerHTML = tests[i];
+            cell2.innerHTML = "<i class='fas fa-arrow-right'></i>";
         }
-    });
 
-    const showTesting = () => {
-        modal.style.display = "block";
-        span.addEventListener("click", () => {
-            modal.style.display = "none";
+        document.addEventListener("keydown", (e) => {
+            if (modal.style.display != "none" && modal.style.display) {
+                if (e.key == "Escape")
+                    hideTesting(modal);
+                else if (keyOrder.includes(e.key)) {
+                    const siteNumber = keyOrder.indexOf(e.key);
+                    if (siteNumber < tests.length)
+                        launchTest(tests[siteNumber], modal);
+                }
+            }
         });
-    }
+    });
 
     document.getElementById("run").addEventListener("click", showTesting);
     chrome.commands.onCommand.addListener((command) => {
         if (command == "show_dialog")
-            showTesting();
+            showTesting(modal, closeButton);
     });
 }
 
@@ -176,6 +199,9 @@ function addLoggingListener(name) {
 
 document.addEventListener("DOMContentLoaded", () => {
     createEditor();
+
+    // clear hash so modal can be "focused" later
+    clearHash();
 
     if ("name" in getUrlVars()) {
         const name = getUrlVars()["name"];

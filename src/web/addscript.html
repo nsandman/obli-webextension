@@ -1,41 +1,41 @@
 <html>
-<head>
-    <meta charset="UTF-8">
-    <link href="styles/addscript.css" rel="stylesheet" />
-    <title>obli - Add Script</title>
-</head>
-<body>
-    <div class="js-console">
-        <header style="margin-top: 7px;margin-bottom:5px;padding-left: 5px;">
-            <input id="scriptname" size="50" placeholder="Script Name" />
-            <button id="run">Test</button>
-            <input type="button" style="float: right;margin-right: 10px;" id="button" value="Save" />
-        </header>
-        <div id="myModal" class="modal">
-
-          <!-- Modal content -->
-          <div class="modal-content">
-              <span class="close">&times;</span>
-              <h1>Choose Quicktest Page</h1>
-              <table id="pages" style="color: black">
-                  <col style="margin-right: 20px;" />
-              </table>
-          </div>
-
-        </div>
-        <div id="editor"></div>
-        <div id="console" style="">
-            <header>
-                <span id="obliversion">obli v</span>
-                <center>
-                    <span id="namehere">obli</span>
-                </center>
+    <head>
+        <meta charset="UTF-8">
+        <link href="https://use.fontawesome.com/releases/v5.0.7/css/all.css" rel="stylesheet" />
+        <link href="styles/addscript.css" rel="stylesheet" />
+        <title>obli - Add Script</title>
+    </head>
+    <body>
+        <div class="js-console">
+            <header style="margin-top: 7px;margin-bottom:5px;padding-left: 5px;">
+                <input id="scriptname" size="50" placeholder="Script Name" />
+                <button id="run">Test</button>
+                <input type="button" style="float: right;margin-right: 10px;" id="button" value="Save" />
             </header>
-            <div id="conscroll" />
-        </div>
-    </div>
-    <script type="text/javascript" src="scripts/vendor/ace.js"></script>     
-    <script src="scripts/addscript.js"></script>
-    <script src="../constants.js"></script>
-</body>
+            <div id="testmodal" class="modal">
+                <div class="modal-content">
+                    <span id="closemodal" class="close">&times;</span>
+                    <h1>Choose Quicktest Page</h1>
+                    <table id="pages" style="width: 100%;">
+                        <col width="0%" style="margin-right: 20px;" />
+                        <col width="100%" />
+                        <col width="0%" />
+                    </table>
+                </div>
+            </div>
+            <div id="editor"></div>
+            <div id="console" style="">
+                <header>
+                    <span id="obliversion">obli v</span>
+                    <center>
+                        <span id="namehere">obli</span>
+                    </center>
+                </header>
+                <div id="conscroll" />
+                </div>
+            </div>
+            <script type="text/javascript" src="scripts/vendor/ace.js"></script>     
+            <script src="scripts/addscript.js"></script>
+            <script src="../constants.js"></script>
+    </body>
 </html>

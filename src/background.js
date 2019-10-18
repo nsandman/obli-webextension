@@ -1,5 +1,5 @@
 let naEnabled = false;
-let managedWindows = [];
+let managedWindow = -1;
 
 function getAllOfPrefix(prefix, callback, defaultValue=null) {
     // get all local storage with null
@@ -68,13 +68,11 @@ chrome.storage.local.get("dispatcher", (dispatcher) => {
     });
 
     chrome.windows.onRemoved.addListener((win) => {
-        if (managedWindows.includes(win.id)) {
-            const idIndex = managedWindows.indexOf(win.id);
-            managedWindows.splice(idIndex, 1);
-        }
+        if (managedWindow == win)
+            managedWindow = -1;
     });
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-        if (managedWindows.includes(tab.windowId)) {
+        if (tab.windowId == managedWindow) {
             chrome.browserAction.setIcon({
                 path: "../images/bug.png",
                 tabId: tabId
@@ -92,7 +90,7 @@ chrome.storage.local.get("dispatcher", (dispatcher) => {
         switch (req.event) {
             case "ismanagedwindow":
                 chrome.windows.getCurrent((win) => {
-                    response(managedWindows.includes(win.id));
+                    response(managedWindow == win.id);
                 });
                 return true;
 
@@ -204,20 +202,36 @@ chrome.storage.local.get("dispatcher", (dispatcher) => {
             case "getproperty": return getRaw(data, response);
             /* end GET RAW events */
 
+            /*
+             {
+                event: "testpage",
+                data: {
+                    url: Url,
+                    left: int,      // left offset
+                    width: int
+                }
+             }
+             */
             case "testpage": {
-                chrome.windows.create({
-                    "url": data["url"],
-                    "left": data["x"],
-                    "width": data["width"],
-                    "focused": true,
-                    "setSelfAsOpener": true
-                }, (win) => {
-                    managedWindows.push(win.id);
-                    for (tab of win.tabs)
-                        chrome.tabs.update(tab.id, {});
-                    response();
-                }); 
-                return true;
+                if (managedWindow == -1) {
+                    chrome.windows.create({
+                        ...data,
+                        focused: true,
+                        setSelfAsOpener: true
+                    }, (win) => {
+                        managedWindow = win.id;
+                        for (tab of win.tabs)
+                            chrome.tabs.update(tab.id, {});
+                    });
+                }
+                else {
+                    chrome.tabs.create({
+                        active: true,
+                        windowId: managedWindow,
+                        url: data["url"]
+                    });
+                }
+                break;
             }
 
             case "rmscript": {

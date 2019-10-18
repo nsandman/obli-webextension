@@ -1,7 +1,7 @@
 // 8 char prefixes to differentiate
 // uses in LocalStorage
 const Prefixes = {
-    script: "_script_",
+    script:  "_script_",
     options: "_meta___",
     project: "_proj___"
 };
@@ -41,8 +41,12 @@ function reload() {
 
 // https://html-online.com/articles/get-url-parameters-javascript/
 function getUrlVars() {
+    let url = window.location.href;
+    if (url.substr(-1) == "#")
+        url = url.slice(0, -1); 
+
     var vars = {};
-    var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+    var parts = url.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
         vars[key] = value;
     });
     return vars;
