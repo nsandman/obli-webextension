@@ -1,5 +1,6 @@
 let naEnabled = false;
 let managedWindow = -1;
+let managedTabs   = [];
 
 function getAllOfPrefix(prefix, callback, defaultValue=null) {
     // get all local storage with null
@@ -53,7 +54,7 @@ function removeRaw(name, prefix="", callback=function(x){}) {
 }
 
 chrome.storage.local.get("dispatcher", (dispatcher) => {
-    const dispatchSocket = io(dispatcher["dispatcher"]);
+    let dispatchSocket = io(dispatcher["dispatcher"]);
 
     let naSocket;
     try {
@@ -66,13 +67,25 @@ chrome.storage.local.get("dispatcher", (dispatcher) => {
     dispatchSocket.on("open_url", (data) => {
         chrome.tabs.create(data);
     });
+    dispatchSocket.on("event", (data) => {
+        managedTabs.forEach((tabId) => {
+            chrome.tabs.sendMessage(tabId, {
+                event: "msggot",
+                data: data 
+            });
+        });
+    });
 
     chrome.windows.onRemoved.addListener((win) => {
         if (managedWindow == win)
             managedWindow = -1;
     });
+
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         if (tab.windowId == managedWindow) {
+            if (!managedTabs.includes(tabId))
+                managedTabs.push(tabId);
+
             chrome.browserAction.setIcon({
                 path: "../images/bug.png",
                 tabId: tabId
@@ -83,6 +96,9 @@ chrome.storage.local.get("dispatcher", (dispatcher) => {
                 });
             });
         }
+    });
+    chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+        managedTabs.remove(tabId);
     });
 
     chrome.runtime.onMessage.addListener((req, sender, response) => {
@@ -336,18 +352,12 @@ chrome.storage.local.get("dispatcher", (dispatcher) => {
             }
 
             case "msgsend": {
-                dispatchSocket.emit("event", data, (res) => {
-                    response(res);
-                });
+                dispatchSocket.emit("event", data, response);
                 return true;
             }
 
-            case "msglisten": {
-                dispatchSocket.on(data.event, data.cb);
-                break;
-            }
-
             // ignore these so other scripts can have handlers
+            case "msggot":
             case "testconsole":
                 break;
             

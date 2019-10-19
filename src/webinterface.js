@@ -138,8 +138,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function baseprint(name, type, tolog) {
         chrome.runtime.sendMessage({
-            "event": "testconsole",
-            "data": {
+            event: "testconsole",
+            data: {
                 script: name,
                 messageType: type,
                 message: tolog
@@ -158,6 +158,18 @@ document.addEventListener("DOMContentLoaded", function() {
                 myName: injections[i][0].slice(0),
                 isTesting: false
             };
+
+            let eventListeners = {};
+            chrome.runtime.onMessage.addListener((req, sender, response) => {
+                switch (req.event) {
+                    case "msggot": {
+                        if (req.data["me"] == TPI.myName)
+                            eventListeners[req.data["event"]](req.data["data"]);
+                        break;
+                    }
+                }
+            });
+
 
             const DataStore = {
                 // saveKey(string key, obj val, function next())
@@ -244,29 +256,29 @@ document.addEventListener("DOMContentLoaded", function() {
             const Messenger = {
                 // send(string method, object data, (optional)function callback)
                 send: function(method, data, cb) {
-                    const payload = {
-                        "event": "msgsend",
-                        "data": {
-                            "module": TPI.myName,
-                            "name": method,
-                            "data": data
+                    return chrome.runtime.sendMessage({
+                        event: "msgsend",
+                        data: {
+                            module: TPI.myName,
+                            name: method,
+                            data: data
                         }
-                    };
-                    if (cb)
-                        return chrome.runtime.sendMessage(payload, cb);
-                    else
-                        return chrome.runtime.sendMessage(payload);
+                    }, cb);
                 },
 
                 // listen(string method, function cb)
                 listen: function(method, cb) {
-                    chrome.runtime.sendMessage({
-                        "event": "msglisten",
-                        "data": {
-                            "method": method,
-                            "cb": cb
-                        }
-                    });
+                    eventListeners[method] = cb;
+                    //chrome.runtime.sendMessage({
+                        //event: "msglisten",
+                        //data: {
+                            //method: method,
+                            //me: TPI.myName
+                        //}
+                    //}, (serializedSocket) => {
+                        //const deserializedSocket = JSON.parse(serializedSocket);
+                        //console.dir(deserializedSocket);
+                    //});
                 }
             };
 
@@ -278,6 +290,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 if (isTesting) {
                     sandbox.console = {
                         log: (tolog) => baseprint(TPI.myName, 0, tolog),
+                        dir: (tolog) => baseprint(TPI.myName, 0, JSON.stringify(tolog)),
                         info: (tolog) => baseprint(TPI.myName, 1, tolog),
                         error: (tolog) => baseprint(TPI.myName, 2, tolog),
                         warn: (tolog) => baseprint(TPI.myName, 3, tolog)
@@ -292,16 +305,16 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
 
                 chrome.runtime.sendMessage({
-                    "event": "getopts",
-                    "script": TPI.myName 
+                    event: "getopts",
+                    data: TPI.myName 
                 }, (prefs) => {
                     const url = window.location.href;
                     const re  = new RegExp(prefs["domains"], "g");
 
                     if (prefs["enabled"] && url.match(re)) {
-                        eval('with (sandbox) {' + code + '};');
                         if (TPI.isTesting)
-                            sandbox.console.info("<strong> --- INFO: Loaded script '" + TPI.myName + "' at " + new Date().toLocaleTimeString() + " --- </strong>");
+                            sandbox.console.info("<strong> --- INFO: Loading script '" + TPI.myName + "' at " + new Date().toLocaleTimeString() + " --- </strong>");
+                        eval('with (sandbox) {' + code + '};');
                     }
                 });
             });
