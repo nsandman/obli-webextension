@@ -170,6 +170,21 @@ chrome.storage.local.get("dispatcher", (dispatcher) => {
             case "getscripts":  return getAllOfPrefix(Prefixes.script,  response);
             case "getprojects": return getAllOfPrefix(Prefixes.project, response);
 
+            case "getscriptproject": {
+                return getAllOfPrefix(Prefixes.project, (projects) => {
+                    let result = null;
+                    const projectsIterable = Object.entries(projects);
+
+                    for (project of projectsIterable) {
+                        if (project[1].includes(data)) {
+                            result = project[0];
+                            break;
+                        }
+                    }
+                    response(result);
+                });
+            }
+
             /*
             {
                 event: "saveprojectoptions",

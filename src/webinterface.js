@@ -156,14 +156,21 @@ document.addEventListener("DOMContentLoaded", function() {
             let sandbox = {};
             const TPI = {
                 myName: injections[i][0].slice(0),
+                myProject: null,
                 isTesting: false
             };
+            chrome.runtime.sendMessage({
+                event: "getscriptproject",
+                data: TPI.myName
+            }, (projName) => {
+                TPI.myProject = projName;
+            });
 
             let eventListeners = {};
             chrome.runtime.onMessage.addListener((req, sender, response) => {
                 switch (req.event) {
                     case "msggot": {
-                        if (req.data["me"] == TPI.myName)
+                        if (req.data["me"] == (TPI.myProject || TPI.myName))
                             eventListeners[req.data["event"]](req.data["data"]);
                         break;
                     }
@@ -259,7 +266,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     return chrome.runtime.sendMessage({
                         event: "msgsend",
                         data: {
-                            module: TPI.myName,
+                            module: (TPI.myProject || TPI.myName),
                             name: method,
                             data: data
                         }

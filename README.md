@@ -17,13 +17,18 @@ As part of this abstraction, some APIs are provided to obli scripts:
 Any of these APIs can be called from any obli script at any time.
 
 ## TPI
-This provides information about the script to itself. Stands for "this project's information".
+This provides information about the script to itself. Stands for "this project's information" (before obli had actual projects).
 
 ### myName
 ```js
 TPI.myName
 ```
 Name of the script as set when saved to obli
+
+```js
+TPI.myProject
+```
+Name of the project this script belongs to. `null` if orphan
 
 ```js
 TPI.isTesting
@@ -59,14 +64,14 @@ Set `value` of DOM element `el` to an empty string
 
 ## Messenger
 
-This is the API for communicating with an obli dispatcher. It will communicate only with the URL for the dispatcher set in options.
+This is the API for communicating with an obli dispatcher. It will communicate only with the URL for the dispatcher set in options. Furthermore, it will only listen for messages from, or send messages to, dispatcher modules with your project name (or script's name if an orphan).
 
 ### send()
 
 ```js
 Messenger.send(string method, object data, (nullable)function callback)
 ```
-Emit event `method` to the obli dispatcher. `cb` can be a function that takes an object, `data`, from a potential response, or it can also take no params.
+Emit event `method` to the obli dispatcher with data `data`. `cb` can be a function that takes an object from a potential response, or it can also take no params.
 
 ### listen()
 ```js
