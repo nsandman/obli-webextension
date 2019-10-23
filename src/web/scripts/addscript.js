@@ -21,9 +21,17 @@ function saveEditorContent() {
 
 function createEditor() {
     if (!editor) {
+        ace.require("ace/ext/language_tools");
         editor = ace.edit("editor");
         editor.setTheme("ace/theme/monokai");
+
         editor.getSession().setMode("ace/mode/javascript");
+        editor.setOptions({
+            enableBasicAutocompletion: true,
+            enableSnippets: true,
+            enableLiveAutocompletion: true
+        });
+
         editor.setKeyboardHandler("ace/keyboard/vim");
         ace.config.loadModule("ace/keyboard/vim", function(module) {
             const vim = module.CodeMirror.Vim;
