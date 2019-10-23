@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head>
+    <title>obli - Settings</title>
+    <script src="../constants.js"></script>
+    <script src="scripts/settings.js"></script>
+</head>
+<body>
+    <input id="importsettings" type="file" style="display: none" />
+    <label for="importsettings" style="color: blue; cursor: pointer">
+        <u>Import</u>
+    </label>
+
+    <br /><br />
+    Dispatcher URL: <input id="dispatcher" placeholder="URL" style="width: 80%;margin-bottom: 8px" />
+    <br />
+
+    Custom API:<br />
+    <textarea id="apis" style="width: 95%; height: 40em"></textarea><br/>
+    <hr/>
+    <button id="savesettings">Save</button>
+    <button id="exportsettings">Export</button>
+</body>
+</html>

@@ -47,94 +47,18 @@ document.addEventListener("DOMContentLoaded", function() {
             el.setAttribute("obli-id", obliId);
 
             chrome.runtime.sendMessage({
-                "event": "naServerEvent",
-                "data": {
-                    "method": "core",
-                    "name": "uploadFile",
-                    "data": {
-                        "path": path,
+                event: "localServerEvent",
+                data: {
+                    method: "core",
+                    name: "uploadFile",
+                    data: {
+                        path: path,
                         "obli-id": obliId
                     }
                 }
             }, next);
         }
     };
-
-    // alternative Action API
-    let NaturalAction = null;
-    chrome.runtime.sendMessage("checkna", (naEnabled) => {
-        if (naEnabled)
-            NaturalAction = {
-                __randomInRange: function(min, max) {
-                    return Math.random() < 0.5 ? ((1-Math.random()) * (max-min) + min) : (Math.random() * (max-min) + min);
-                },
-
-                __sendMessage: function(method, data, cb, includeTimeout=true) {
-                    const payload = {
-                        "event": "naServerEvent",
-                        "data": {
-                            "method": "na",
-                            "name": method
-                        }
-                    };
-                    if (data)
-                        payload["data"]["data"] = data;
-
-                    if (cb) 
-                        chrome.runtime.sendMessage(payload, () => {
-                            const pauseTime = includeTimeout ? (Math.floor(Math.random() * 1500) + 1) : 0;
-                            setTimeout(cb, pauseTime);
-                        }); 
-                    else 
-                        chrome.runtime.sendMessage(payload);
-                },
-
-                __domToScreenPos: function(el) {
-                    const jEl = $(el);
-
-                    const offset     = jEl.offset();
-
-                    //const scrollX = window.pageXOffset || (document.documentElement || document.body.parentNode || document.body).scrollLeft;
-                    //const scrollY = window.pageYOffset || (document.documentElement || document.body.parentNode || document.body).scrollTop;
-
-                    const compStyle = window.getComputedStyle(el, null);
-                    const gapX = parseFloat(compStyle.getPropertyValue("padding-left")) + parseFloat(compStyle.getPropertyValue("margin-left"));
-                    const gapY = parseFloat(compStyle.getPropertyValue("padding-right")) + parseFloat(compStyle.getPropertyValue("margin-right"));
-
-                    // y-coord: we assume the browser chrome is entirely the toolbar at the top. in other words this probably will break if you have the downloads window up
-                    return JSON.stringify({
-                        x: parseInt((offset.left + window.screenX) + this.__randomInRange(gapX, gapX+jEl.width())),
-                        y: parseInt(((offset.top + window.screenY) + (window.outerHeight - window.innerHeight)) + this.__randomInRange(gapY, gapY+jEl.height()))
-                    });
-                },
-
-                click: function(el, next) {
-                    this.__sendMessage("moveMouse", this.__domToScreenPos(el), () => {
-                        this.__sendMessage("pressMouse", null, next);
-                    }, false);
-                },
-
-                setTextValue: function(el, val, next) {
-                    this.click(el, () => {
-                        this.__sendMessage("type", val, next);
-                    });
-                },
-
-                setCheckValue: function(el, val, next) {
-                    if (el.checked != val)
-                        return this.click(el, next);
-                    return next();
-                },
-
-                clear: function(el, next) {
-                    this.click(el, () => {
-                        this.__sendMessage("clear", null, next);
-                    });
-                },
-
-                uploadFile: Action.uploadFile
-            };
-    });
 
     function baseprint(name, type, tolog) {
         chrome.runtime.sendMessage({
@@ -291,40 +215,48 @@ document.addEventListener("DOMContentLoaded", function() {
 
             const code = injections[i][1];
             chrome.runtime.sendMessage({
-                event: "ismanagedwindow"
-            }, (isTesting) => {
-                TPI.isTesting = isTesting;
-                if (isTesting) {
-                    sandbox.console = {
-                        log: (tolog) => baseprint(TPI.myName, 0, tolog),
-                        dir: (tolog) => baseprint(TPI.myName, 0, JSON.stringify(tolog)),
-                        info: (tolog) => baseprint(TPI.myName, 1, tolog),
-                        error: (tolog) => baseprint(TPI.myName, 2, tolog),
-                        warn: (tolog) => baseprint(TPI.myName, 3, tolog)
-                    };
-
-                    window.addEventListener("error", e => {
-                        if (e.type == "error")
-                            sandbox.console.error(`ERROR: '${TPI.myName}'@${e.lineno}:${e.colno}: ${e.message}`);
-                        else if (e.type == "warning")
-                            sandbox.console.warn(`WARNING: '${TPI.myName}'@${e.lineno}:${e.colno}: ${e.message}`);
-                    });        
-                }
+                event: "getoblisettings"
+            }, (settings) => {
+                eval("sandbox = {" + settings.apis + "}");
 
                 chrome.runtime.sendMessage({
-                    event: "getopts",
-                    data: TPI.myName 
-                }, (prefs) => {
-                    const url = window.location.href;
-                    const re  = new RegExp(prefs["domains"], "g");
+                    event: "ismanagedwindow"
+                }, (isTesting) => {
+                    TPI.isTesting = isTesting;
+                    if (isTesting) {
+                        sandbox.console = {
+                            log: (tolog) => baseprint(TPI.myName, 0, tolog),
+                            dir: (tolog) => baseprint(TPI.myName, 0, JSON.stringify(tolog)),
+                            info: (tolog) => baseprint(TPI.myName, 1, tolog),
+                            error: (tolog) => baseprint(TPI.myName, 2, tolog),
+                            warn: (tolog) => baseprint(TPI.myName, 3, tolog)
+                        };
 
-                    if (prefs["enabled"] && url.match(re)) {
-                        if (TPI.isTesting)
-                            sandbox.console.info("<strong> --- INFO: Loading script '" + TPI.myName + "' at " + new Date().toLocaleTimeString() + " --- </strong>");
-                        eval('with (sandbox) {' + code + '};');
+                        window.addEventListener("error", e => {
+                            if (e.type == "error")
+                                sandbox.console.error(`ERROR: '${TPI.myName}'@${e.lineno}:${e.colno}: ${e.message}`);
+                            else if (e.type == "warning")
+                                sandbox.console.warn(`WARNING: '${TPI.myName}'@${e.lineno}:${e.colno}: ${e.message}`);
+                        });        
                     }
+
+                    chrome.runtime.sendMessage({
+                        event: "getopts",
+                        data: TPI.myName 
+                    }, (prefs) => {
+                        const url = window.location.href;
+                        const re  = new RegExp(prefs["domains"], "g");
+
+                        if (prefs["enabled"] && url.match(re)) {
+                            if (TPI.isTesting)
+                                sandbox.console.info("<strong> --- INFO: Loading script '" + TPI.myName + "' at " + new Date().toLocaleTimeString() + " --- </strong>");
+                            eval("with (sandbox) {" + code + "};");
+                        }
+                    });
                 });
             });
+
+            
         }
         return true;
     });

@@ -4,7 +4,8 @@ const Prefixes = {
     script:    "_script_",
     options:   "_meta___",
     project:   "_proj___",
-    dataStore: "_dstore_"
+    dataStore: "_dstore_",
+    obli:      "_obli___"
 };
 
 Array.prototype.remove = function() {

@@ -1,4 +1,3 @@
-let naEnabled = false;
 let managedWindow = -1;
 let managedTabs   = [];
 
@@ -53,15 +52,15 @@ function removeRaw(name, prefix="", callback=function(x){}) {
     return true;
 }
 
-chrome.storage.local.get("dispatcher", (dispatcher) => {
-    let dispatchSocket = io(dispatcher["dispatcher"]);
+getRaw("settings", callback=(dispatcher) => {
+    let dispatchSocket = io(dispatcher["dispatcher"] || "");
 
-    let naSocket;
+    let localSocket;
     try {
-        naSocket = io("http://localhost:5726");
+        localSocket = io("http://localhost:5726");
         naEnabled = true;
     } catch (e) {
-        naSocket = null;
+        localSocket = null;
     }
 
     dispatchSocket.on("open_url", (data) => {
@@ -160,15 +159,18 @@ chrome.storage.local.get("dispatcher", (dispatcher) => {
                 return true;
             }
 
-            case "checkna": response(naEnabled); break;
-            case "naServerEvent": {
-                naSocket.emit("event", req.data, response); 
+            case "localServerEvent": {
+                localSocket.emit("event", req.data, response); 
                 return true;
             }
 
             // GET ALL events: get all scripts that start with a certain prefix
             case "getscripts":  return getAllOfPrefix(Prefixes.script,  response);
             case "getprojects": return getAllOfPrefix(Prefixes.project, response);
+            case "getoblisettings":
+                return getRaw("settings", 
+                    callback=response, 
+                    prefix=Prefixes.obli);
 
             case "getscriptproject": {
                 return getAllOfPrefix(Prefixes.project, (projects) => {
@@ -200,6 +202,11 @@ chrome.storage.local.get("dispatcher", (dispatcher) => {
 
                 return saveRaw(opts, Prefixes.project, response);
             }
+
+            case "saveoblisettings":
+                return saveRaw({
+                    "settings": data
+                }, Prefixes.obli, response);
 
             /*
             {
@@ -269,9 +276,9 @@ chrome.storage.local.get("dispatcher", (dispatcher) => {
                     response, 
                     prefix=Prefixes.options, 
                     defaultValue={
-                        "enabled": true,
-                        "domains": "",
-                        "testpages": ""
+                        enabled: true,
+                        domains: ".*",
+                        testpages: "https://example.com"
                     });
 
             case "getscript": return getRaw(data, response, prefix=Prefixes.script);
@@ -356,8 +363,8 @@ chrome.storage.local.get("dispatcher", (dispatcher) => {
                         cZip.generateAsync({type:"blob"})
                             .then(function(content) {
                                 chrome.downloads.download({
-                                    "url": URL.createObjectURL(content),
-                                    "filename": data + ".obli"
+                                    url: URL.createObjectURL(content),
+                                    filename: data + ".obli"
                                 });
                             });
                     });
@@ -382,4 +389,7 @@ chrome.storage.local.get("dispatcher", (dispatcher) => {
             }
         }
     });
+}, prefix=Prefixes.obli, defaultValue={
+    dispatcher: "",
+    apis: ""
 });
