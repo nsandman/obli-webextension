@@ -16,7 +16,6 @@ document.addEventListener("DOMContentLoaded", function() {
         element.dispatchEvent(new Event("change", { bubbles: true }));
     }
 
-
     const Action = {
         // click(DOMElement el)
         click: function(el, next) {
@@ -249,14 +248,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
                         if (prefs["enabled"] && url.match(re)) {
                             if (TPI.isTesting)
-                                sandbox.console.info("<strong> --- INFO: Loading script '" + TPI.myName + "' at " + new Date().toLocaleTimeString() + " --- </strong>");
+                                sandbox.console.info(" --- INFO: Loading script '" + TPI.myName + "' at " + new Date().toLocaleTimeString() + " --- ");
                             eval("with (sandbox) {" + code + "};");
                         }
                     });
                 });
             });
-
-            
         }
         return true;
     });

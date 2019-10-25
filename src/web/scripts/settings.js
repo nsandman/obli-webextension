@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
             event: "getoblisettings"
         }, (settings) => {
             const stringSettings = JSON.stringify(settings);
-            const blob = new Blob([stringSettings], {type: "application/json"});
+            const blob = new Blob([stringSettings], {type: "application/x-obliconf"});
             chrome.downloads.download({
                 url: URL.createObjectURL(blob),
                 filename: "settings.obliconf"

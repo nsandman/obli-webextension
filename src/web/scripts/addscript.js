@@ -157,7 +157,7 @@ function addTestSiteShortcuts(name) {
         });
     });
 
-    document.getElementById("run").addEventListener("click", showTesting);
+    document.getElementById("run").addEventListener("click", () => showTesting(modal, closeButton));
     chrome.commands.onCommand.addListener((command) => {
         if (command == "show_dialog")
             showTesting(modal, closeButton);
@@ -197,7 +197,7 @@ function addLoggingListener(name) {
             logPre.style.margin = 0;
             logPre.style.color  = scriptStyle.color;
 
-            logPre.innerHTML = ` ${scriptStyle.emoji} ${req.data.message}`;
+            logPre.innerHTML = ` ${scriptStyle.emoji} ${escapeHtml(req.data.message)}`;
 
             testConsole.appendChild(logPre);
             testConsole.scrollTop = testConsole.scrollHeight;   // scroll to bottom

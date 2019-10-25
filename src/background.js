@@ -360,7 +360,10 @@ getRaw("settings", callback=(dispatcher) => {
                             );
                         }
 
-                        cZip.generateAsync({type:"blob"})
+                        cZip.generateAsync({
+                            type: "blob",
+                            mimeType: "application/x-obliproj"
+                        })
                             .then(function(content) {
                                 chrome.downloads.download({
                                     url: URL.createObjectURL(content),
