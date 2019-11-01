@@ -32,6 +32,39 @@ function createEditor() {
             enableLiveAutocompletion: true
         });
 
+        // vim-like relative line numbers
+        // https://github.com/c9/core/blob/6a83374e8d3702964984431887f032b980b5c723/plugins/c9.ide.ace/ace.js#L1577-L1608.
+        editor.session.gutterRenderer = {
+            getText: function(session, row) {
+                return (Math.abs(session.selection.lead.row - row) || (row + 1 + (row < 9 ? "\xb7" : ""))) + "";
+            },
+            getWidth: function(session, lastLineNumber, config) {
+                return session.getLength().toString().length * config.characterWidth;
+            },
+            update: function(e, editor) {
+                editor.renderer.$loop.schedule(editor.renderer.CHANGE_GUTTER);
+            },
+            attach: function(editor) {
+                editor.renderer.$gutterLayer.$renderer = this;
+                editor.on("changeSelection", this.update);
+            },
+            detach: function(editor) {
+                editor.renderer.$gutterLayer.$renderer = null;
+                editor.off("changeSelection", this.update);
+            }
+        };
+
+        const updateGutter = () => editor.session.gutterRenderer.update(null, editor);
+        editor.keyBinding.origOnCommandKey = editor.keyBinding.onCommandKey;
+        editor.keyBinding.onCommandKey = function(e, hashId, keyCode) {
+            // up | down | j | k | enter | g
+            if (keyCode == 38 || keyCode == 40 || keyCode == 74 || keyCode == 75 || keyCode == 13 || keyCode == 71) 
+                updateGutter();
+
+            this.origOnCommandKey(e, hashId, keyCode);
+        }
+        editor.on("click", updateGutter);
+
         editor.setKeyboardHandler("ace/keyboard/vim");
         ace.config.loadModule("ace/keyboard/vim", function(module) {
             const vim = module.CodeMirror.Vim;

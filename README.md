@@ -118,3 +118,16 @@ DataStore.getKeys(string keys, function(results))
 DataStore.getKeys(string[] keys, function(results))
 ```
 Get key or keys, and have the results returned in an object
+
+# ObliQueue
+
+This provides an API for actions that all need to be executed, but not necessarily in order.
+
+```js
+let queue = ObliQueue(/* optional: add tasks here */);
+queue.addTasks(task1, task2, task3, ...);
+
+queue.exec();              // execute all with 0ms delay
+queue.exec(10);            // 10ms delay
+queue.exec(null, 10, 40);  // execute with delay between 10ms and 40ms
+```

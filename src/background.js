@@ -109,7 +109,7 @@ getRaw("settings", callback=(dispatcher) => {
                 });
                 return true;
 
-            /*
+                /*
             {
                 event: "save_raw",
                 data: {
@@ -117,10 +117,10 @@ getRaw("settings", callback=(dispatcher) => {
                     options: obj
                 }
             }
-             */
+            */
             case "save_raw": return saveRaw(data["options"], prefix=data["prefix"], callback=response);
 
-            /*
+                /*
             {
                 event: "createproj_file",
                 data: {
@@ -128,34 +128,34 @@ getRaw("settings", callback=(dispatcher) => {
                     zip: Blob
                 }
             }
-             */
+            */
             case "createproj_file": {
                 JSZip.loadAsync(req.data.zip)
-                    .then((zip) => {
-                        let projNames = [];
-                        zip.forEach((relativePath, file) => {
-                            const name = relativePath.replace(".obli.js", "");
+                .then((zip) => {
+                    let projNames = [];
+                    zip.forEach((relativePath, file) => {
+                        const name = relativePath.replace(".obli.js", "");
 
-                            if (!name.includes("/") && (relativePath.includes(".obli.js") && !relativePath.includes(".obli.json"))) {
-                                projNames.push(name);
+                        if (!name.includes("/") && (relativePath.includes(".obli.js") && !relativePath.includes(".obli.json"))) {
+                            projNames.push(name);
 
-                                zip.file(name + ".obli.json").async("string").then((options) => {
-                                    file.async("string").then((data) => {
-                                        let opts = {};
-                                        opts[Prefixes.script + name] = data;
-                                        opts[Prefixes.options + name] = JSON.parse(options);
+                            zip.file(name + ".obli.json").async("string").then((options) => {
+                                file.async("string").then((data) => {
+                                    let opts = {};
+                                    opts[Prefixes.script + name] = data;
+                                    opts[Prefixes.options + name] = JSON.parse(options);
 
-                                        chrome.storage.local.set(opts);
-                                    });
+                                    chrome.storage.local.set(opts);
                                 });
-                            }
-                        });
-
-                        let fspOpts = {};
-                        fspOpts[Prefixes.project + req.data.name] = projNames;
-
-                        chrome.storage.local.set(fspOpts, () => response("ok"));
+                            });
+                        }
                     });
+
+                    let fspOpts = {};
+                    fspOpts[Prefixes.project + req.data.name] = projNames;
+
+                    chrome.storage.local.set(fspOpts, () => response("ok"));
+                });
                 return true;
             }
 
@@ -164,7 +164,7 @@ getRaw("settings", callback=(dispatcher) => {
                 return true;
             }
 
-            // GET ALL events: get all scripts that start with a certain prefix
+                // GET ALL events: get all scripts that start with a certain prefix
             case "getscripts":  return getAllOfPrefix(Prefixes.script,  response);
             case "getprojects": return getAllOfPrefix(Prefixes.project, response);
             case "getoblisettings":
@@ -187,7 +187,7 @@ getRaw("settings", callback=(dispatcher) => {
                 });
             }
 
-            /*
+                /*
             {
                 event: "saveprojectoptions",
                 data: {
@@ -208,7 +208,7 @@ getRaw("settings", callback=(dispatcher) => {
                     "settings": data
                 }, Prefixes.obli, response);
 
-            /*
+                /*
             {
                 event: "setopts",
                 data: {
@@ -224,7 +224,7 @@ getRaw("settings", callback=(dispatcher) => {
                 return saveRaw(opts, Prefixes.options, response);
             }
 
-            /*
+                /*
             {
                 event: "saveDSKey",
                 data: {
@@ -248,7 +248,7 @@ getRaw("settings", callback=(dispatcher) => {
                 );
             }
 
-            /*
+                /*
             {
                 event: "getDSKey",
                 data: {
@@ -269,7 +269,7 @@ getRaw("settings", callback=(dispatcher) => {
                 );
             }
 
-            /* RAW GET events: data is a string */
+                /* RAW GET events: data is a string */
             case "getopts":
                 return getRaw(
                     data, 
@@ -283,9 +283,9 @@ getRaw("settings", callback=(dispatcher) => {
 
             case "getscript": return getRaw(data, response, prefix=Prefixes.script);
             case "getproperty": return getRaw(data, response);
-            /* end GET RAW events */
+                /* end GET RAW events */
 
-            /*
+                /*
              {
                 event: "testpage",
                 data: {
@@ -354,8 +354,8 @@ getRaw("settings", callback=(dispatcher) => {
                             const thisCode = (typeof code[1] === "string") ? code[1] : JSON.stringify(code[1]);
                             cZip.file(
                                 code[0].substring(8) 
-                                    + 
-                                    ((code[0].substring(0, 8) == Prefixes.script) ? ".obli.js" : ".obli.json"),
+                                + 
+                                ((code[0].substring(0, 8) == Prefixes.script) ? ".obli.js" : ".obli.json"),
                                 thisCode
                             );
                         }
@@ -381,11 +381,11 @@ getRaw("settings", callback=(dispatcher) => {
                 return true;
             }
 
-            // ignore these so other scripts can have handlers
+                // ignore these so other scripts can have handlers
             case "msggot":
             case "testconsole":
                 break;
-            
+
             default: {
                 response("ERR: Unknown request");
                 break;

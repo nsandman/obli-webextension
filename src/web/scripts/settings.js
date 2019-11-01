@@ -46,9 +46,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }, (settings) => {
             const stringSettings = JSON.stringify(settings);
             const blob = new Blob([stringSettings], {type: "application/x-obliconf"});
+            const now = new Date();
+            const offsetMs = now.getTimezoneOffset() * 60 * 1000;
+            const dateLocal = new Date(now.getTime() - offsetMs);
+            const dateStr = dateLocal.toISOString().slice(0, 16).replace(/:/, "-");
+
+            console.log(dateStr + ".obliconf");
             chrome.downloads.download({
                 url: URL.createObjectURL(blob),
-                filename: "settings.obliconf"
+                filename: dateStr + ".obliconf"
             });
         });
     });

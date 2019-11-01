@@ -16,6 +16,41 @@ document.addEventListener("DOMContentLoaded", function() {
         element.dispatchEvent(new Event("change", { bubbles: true }));
     }
 
+    const ObliQueue = class {
+        sleep(ms) {
+            const start = new Date().getTime(), expire = start + ms;
+            while (new Date().getTime() < expire) { }
+            return;
+        }
+
+        constructor() {
+            this.execTasks = [];
+            this.addTasks(arguments);
+        }
+
+        addTasks() {
+            this.execTasks = [...this.execTasks, ...arguments];
+        }
+
+        exec(delay=0) {
+            for (let i = this.execTasks.length; i; i--) {
+                const index = Math.floor(Math.random() * this.execTasks.length);
+                
+                const f = this.execTasks[index];
+                if (typeof(f) === "function") {
+                    // if random delay, call exec(null, minDelay, maxDelay)
+                    if (delay === null) delay = Math.floor(Math.random() * (arguments[2] - arguments[1] + 1)) + arguments[1];
+                    if (delay)
+                        this.sleep(delay);
+
+                    f();
+                } 
+                
+                this.execTasks.splice(index, 1);
+            }
+        }
+    };
+
     const Action = {
         // click(DOMElement el)
         click: function(el, next) {
@@ -249,7 +284,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         if (prefs["enabled"] && url.match(re)) {
                             if (TPI.isTesting)
                                 sandbox.console.info(" --- INFO: Loading script '" + TPI.myName + "' at " + new Date().toLocaleTimeString() + " --- ");
-                            eval("with (sandbox) {" + code + "};");
+                            eval("with (sandbox) {\n" + code + "\n};");
                         }
                     });
                 });

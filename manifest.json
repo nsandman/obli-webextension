@@ -1,25 +1,25 @@
 {
-	"manifest_version": 2,
-	"name": "obli",
-	"version": "0.1.0",
-	"content_scripts": [
-		{
-			"all_frames": true, 
+    "manifest_version": 2,
+    "name": "obli",
+    "version": "0.1.0",
+    "content_scripts": [
+        {
+            "all_frames": true, 
             "js": [
                 "inc/jquery-offset.min.js",
                 "src/webinterface.js"
             ],
-			"matches": ["<all_urls>"],
+            "matches": ["<all_urls>"],
             "run_at": "document_start"
-		}
-	],
-	"permissions": [
+        }
+    ],
+    "permissions": [
         "downloads",
-		"tabs",
-		"unlimitedStorage",
+        "tabs",
+        "unlimitedStorage",
         "storage",
         "<all_urls>"
-	],
+    ],
     "commands": {
         "show_dialog": {
             "suggested_key": {
